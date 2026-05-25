@@ -500,7 +500,7 @@ function makeTape(){
 }
 
 function makeChart(mountEl,symbol){
-  if(!mountEl||!mountEl.parentNode)return;
+  if(!mountEl||!mountEl.isConnected||!mountEl.parentNode)return;
   const id='tv'+(++widgetSeq);
   mountEl.id=id;
   new TradingView.widget({
@@ -636,7 +636,7 @@ async function fetchGoogleNews(tab){
   // Then pass the whole gnUrl DIRECTLY as rss_url — do NOT wrap in encodeURIComponent again.
   // rss2json requires a valid URL as rss_url; it passes it as-is to Google News.
   const gnUrl='https://news.google.com/rss/search?q='+encodeURIComponent(q)+'&hl=en&gl=US&ceid=US:en';
-  const apiUrl='https://api.rss2json.com/v1/api.json?rss_url='+gnUrl+'&count=30'+(RSS2JSON_KEY?'&api_key='+RSS2JSON_KEY:'');
+  const apiUrl='https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(gnUrl)+'&count=30'+(RSS2JSON_KEY?'&api_key='+RSS2JSON_KEY:'');
   try{
     const r=await fetch(apiUrl,{signal:AbortSignal.timeout(8000)});
     const d=await r.json();
