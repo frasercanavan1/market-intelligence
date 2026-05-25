@@ -540,13 +540,12 @@ function renderGrid(gridId,items){
 }
 
 // ═══════════════════════════════════════════════════════════════
-// NEWS ENGINE — rotating CORS proxies, no rate limits
+// NEWS ENGINE — multiple CORS proxies, all tabs on allorigins
 // ═══════════════════════════════════════════════════════════════
-// Fetches Google News RSS through free CORS proxies.
-// Proxies are rotated per-tab so concurrent tab loads hit different endpoints.
-// rss2json is a last resort only (rate-limited on free tier).
+// Primary: allorigins.win for every tab (proven reliable).
+// Fallback chain: codetabs → jsonp.afeld.me → rss2json (last resort).
 
-const CACHE={}, TTL=30*60*1000; // 30-min cache — one real fetch per tab per half-hour
+const CACHE={}, TTL=30*60*1000;
 
 function parsePubDate(str){
   if(!str)return 0;
@@ -567,20 +566,10 @@ function parseXML(text){
   }catch{return[];}
 }
 
-// Pool of free CORS proxies — rotated so tabs don't hammer the same one
-const PROXY_POOL=[
-  url=>'https://api.allorigins.win/get?url='+encodeURIComponent(url),
-  url=>'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(url),
-  url=>'https://thingproxy.freeboard.io/fetch/'+url,
-];
-
-// Try a single proxy, return parsed items or []
-async function tryProxy(proxyFn, url){
-  const proxyUrl=proxyFn(url);
+async function tryFetch(proxyUrl){
   const r=await fetch(proxyUrl,{signal:AbortSignal.timeout(10000)});
   if(!r.ok) throw new Error('HTTP '+r.status);
   const text=await r.text();
-  // allorigins wraps in JSON; others return raw XML
   let xml=text;
   try{ const j=JSON.parse(text); if(j.contents) xml=j.contents; }catch{}
   const items=parseXML(xml);
@@ -588,43 +577,41 @@ async function tryProxy(proxyFn, url){
   return items;
 }
 
-// rss2json last-resort fallback
-async function tryRss2json(url){
-  const api='https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(url)+'&count=30'+(RSS2JSON_KEY?'&api_key='+RSS2JSON_KEY:'');
-  const r=await fetch(api,{signal:AbortSignal.timeout(10000)});
-  const d=await r.json();
-  if(d.status==='ok'&&d.items?.length) return d.items.map(i=>({
-    title:i.title||'',link:i.link||i.guid||'',
-    description:i.description||i.content||'',
-    pubDate:i.pubDate||'',source:d.feed?.title||'',
-  }));
-  throw new Error('rss2json: '+d.status);
-}
-
-// Tab names mapped to a proxy index so tabs spread across the pool
-const TAB_PROXY={overview:0,mining:1,energy:2,healthcare:0,technology:1,realestate:2,hospitality:0};
-
-async function fetchAllFeeds(tab){ return[]; } // direct feeds are empty
-
 async function fetchGoogleNews(tab){
   const q=GN_QUERIES[tab]||'';
   const gnUrl='https://news.google.com/rss/search?q='+encodeURIComponent(q)+'&hl=en&gl=US&ceid=US:en';
+  const enc=encodeURIComponent(gnUrl);
 
-  // Build ordered list: preferred proxy first, then the others, then rss2json
-  const preferred=TAB_PROXY[tab]??0;
-  const proxyOrder=[
-    PROXY_POOL[preferred],
-    ...PROXY_POOL.filter((_,i)=>i!==preferred),
+  // All proxies tried in order for every tab — allorigins first as it's most reliable
+  const proxies=[
+    'https://api.allorigins.win/get?url='+enc,
+    'https://api.codetabs.com/v1/proxy?quest='+enc,
+    'https://corsproxy.io/?'+enc,
+    'https://api.allorigins.win/raw?url='+enc,
   ];
 
-  for(const proxyFn of proxyOrder){
-    try{ const items=await tryProxy(proxyFn,gnUrl); if(items.length) return items; }
-    catch{}
+  for(const url of proxies){
+    try{
+      const items=await tryFetch(url);
+      if(items.length) return items;
+    }catch{}
   }
-  // Last resort
-  try{ return await tryRss2json(gnUrl); }catch{}
+
+  // Last resort: rss2json
+  try{
+    const api='https://api.rss2json.com/v1/api.json?rss_url='+enc+'&count=30'+(RSS2JSON_KEY?'&api_key='+RSS2JSON_KEY:'');
+    const r=await fetch(api,{signal:AbortSignal.timeout(10000)});
+    const d=await r.json();
+    if(d.status==='ok'&&d.items?.length) return d.items.map(i=>({
+      title:i.title||'',link:i.link||i.guid||'',
+      description:i.description||i.content||'',
+      pubDate:i.pubDate||'',source:d.feed?.title||'',
+    }));
+  }catch{}
   return[];
 }
+
+async function fetchAllFeeds(tab){ return[]; }
 function extractSource(item){
   if(item.source&&item.source.length>1)return item.source;
   if(item._feedUrl){
