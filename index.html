@@ -194,7 +194,7 @@ footer{border-top:1px solid var(--b);padding:1.5rem 0;margin-top:1rem}
         <div class="brand-sub">Portfolio Intelligence</div>
       </div>
       <div class="hdr-r">
-        <div class="ai-badge"><span class="ai-dot"></span>AI News</div>
+        <div class="ai-badge"><span class="ai-dot"></span>Live News</div>
         <div class="mkt-pill"><div class="mdot" id="mdot"></div><span class="mlbl" id="mlbl">Markets</span></div>
         <div class="clk" id="clk"></div>
       </div>
@@ -230,16 +230,17 @@ footer{border-top:1px solid var(--b);padding:1.5rem 0;margin-top:1rem}
   <div class="w">
     <div class="ftr">
       <div class="fl"><strong>PowerOne Capital Markets</strong> · Portfolio Intelligence Dashboard</div>
-      <div class="fr">Prices: TradingView · News: AI web search · Internal use only</div>
+      <div class="fr">Prices: TradingView · News: NewsAPI.org · Internal use only</div>
     </div>
   </div>
 </footer>
 
 <script>
 // ════════════════════════════════════════════════════════
-// CONFIGURATION — set your Anthropic API key here when hosting
+// CONFIGURATION — paste your NewsAPI.org key here
+// Get a free key at https://newsapi.org (100 req/day free)
 // ════════════════════════════════════════════════════════
-const ANTHROPIC_API_KEY = '';  // ← paste your key between the quotes when self-hosting
+const NEWSAPI_KEY = 'YOUR_NEWSAPI_KEY_HERE';  // ← paste your NewsAPI.org key between the quotes
 
 // ════════════════════════════════════════════════════════
 // PORTFOLIO DATA
@@ -251,7 +252,7 @@ const TABS = [
     tvSymbols: null,
     stockSymbols: null,
     companies:[],
-    prompt:'Find the 8 most important recent financial news stories about global markets, commodities (gold, silver, copper, oil), major indices (S&P 500, TSX, Nasdaq), interest rates, and macroeconomic developments. Focus on market-moving news from today or yesterday.',
+    newsQuery:'gold OR silver OR "S&P 500" OR TSX OR "interest rates" OR commodities OR "crude oil" OR "federal reserve"',
   },
   {
     id:'mining', name:'Mining', color:'#4CAF50',
@@ -295,7 +296,7 @@ const TABS = [
       {name:'Carlton Precious Inc.',        ticker:null,   exchange:null,   color:'#C0C0C0',status:'deal',   desc:'Precious metals.'},
       {name:'Gold Port Corporation',        ticker:null,   exchange:null,   color:'#D4A843',status:'deal',   desc:'Gold exploration.'},
     ],
-    prompt:'Find 8 recent news stories about gold and silver mining, junior mining companies on the TSX Venture Exchange, precious metals exploration in Canada, copper and nickel developments, and mining sector M&A. Include stories about gold price movements and new resource discoveries.',
+    newsQuery:'gold mining OR silver mining OR "junior miner" OR "precious metals" OR copper OR nickel OR lithium OR "TSX Venture" OR "gold exploration"',
   },
   {
     id:'energy', name:'Energy & Cleantech', color:'#FF8C42',
@@ -322,7 +323,7 @@ const TABS = [
       {name:'ReGen III Corp.',              ticker:null,   exchange:null,   color:'#4CAF50',status:'deal',   desc:'Waste oil re-refining cleantech.'},
       {name:'Aero Energy Limited',          ticker:null,   exchange:null,   color:'#FF8C42',status:'deal',   desc:'Energy issuer.'},
     ],
-    prompt:'Find 8 recent news stories about uranium mining and nuclear energy, oil and gas prices (WTI crude), cleantech and carbon markets, Canadian energy sector, renewable energy developments. Include uranium spot price news and nuclear power plant developments.',
+    newsQuery:'uranium OR nuclear energy OR "oil price" OR "natural gas" OR cleantech OR "carbon credits" OR "renewable energy" OR "crude oil"',
   },
   {
     id:'healthcare', name:'Health & Life Sciences', color:'#5B9BD5',
@@ -351,7 +352,7 @@ const TABS = [
       {name:'Restart Life Sciences Corp.', ticker:null,   exchange:null,   color:'#9B7FD4',status:'deal',   desc:'Life sciences issuer.'},
       {name:'Promino Nutritional Sciences', ticker:null,   exchange:null,   color:'#4CAF50',status:'deal',   desc:'Nutritional sciences & health products.'},
     ],
-    prompt:'Find 8 recent news stories about healthcare and biotech companies, medical device approvals, pharmaceutical earnings, drug trial results, health-tech innovation, and Canadian life sciences sector developments. Include FDA or Health Canada approval news.',
+    newsQuery:'biotech OR pharmaceutical OR "medical device" OR "FDA approval" OR "Health Canada" OR "drug trial" OR "life sciences" OR healthcare',
   },
   {
     id:'tech', name:'Technology', color:'#9B7FD4',
@@ -378,7 +379,7 @@ const TABS = [
       {name:'Safety Strips Tech Corp.',     ticker:null,   exchange:null,   color:'#888',   status:'deal',   desc:'Safety technology.'},
       {name:'Boba Mint Holdings Ltd.',      ticker:null,   exchange:null,   color:'#E05C5C',status:'deal',   desc:'Consumer & digital brand.'},
     ],
-    prompt:'Find 8 recent news stories about artificial intelligence companies, fintech developments, cryptocurrency and digital asset markets, Canadian technology sector, SaaS company earnings, and major tech industry trends. Include AI regulation news and notable funding rounds.',
+    newsQuery:'artificial intelligence OR fintech OR cryptocurrency OR "digital assets" OR "Canadian tech" OR SaaS OR "tech earnings" OR blockchain',
   },
   {
     id:'realestate', name:'Real Estate & Finance', color:'#6EC6A0',
@@ -395,7 +396,7 @@ const TABS = [
       {name:'Maritime Launch Services Inc.',ticker:'MLS',  exchange:'TSXV', color:'#9B7FD4',status:'public', desc:'Canadian commercial rocket launch facility, Nova Scotia.'},
       {name:'POCML 7 Inc.',                 ticker:null,   exchange:null,   color:'#D4A843',status:'deal',   desc:'PowerOne Capital Markets Limited — CPC vehicle.'},
     ],
-    prompt:'Find 8 recent news stories about Canadian real estate markets, REITs, housing prices, mortgage rates, commercial real estate, Bank of Canada rate decisions affecting housing, and real estate investment trends.',
+    newsQuery:'"Canadian real estate" OR REIT OR "housing prices" OR "mortgage rates" OR "Bank of Canada" OR "commercial real estate" OR "real estate investment"',
   },
   {
     id:'hospitality', name:'Hospitality & Lifestyle', color:'#E05C5C',
@@ -409,7 +410,7 @@ const TABS = [
       {name:'Le Calvane',      ticker:null,exchange:null,color:'#888',   status:'private',desc:'Private Tuscan hospitality property, Italy.'},
       {name:'La Terrazza',     ticker:null,exchange:null,color:'#888',   status:'private',desc:'Private Italian hospitality & lifestyle venue.'},
     ],
-    prompt:'Find 8 recent news stories about restaurant industry trends, luxury hospitality, wine and tourism, consumer lifestyle brands, food and beverage sector, upscale dining, and Italian or European travel and hospitality developments.',
+    newsQuery:'restaurant industry OR luxury hospitality OR "wine tourism" OR "food and beverage" OR "upscale dining" OR "Italian tourism" OR "consumer brands"',
   },
 ];
 
@@ -441,68 +442,56 @@ function timeNow(){return new Date().toLocaleTimeString('en-CA',{hour:'2-digit',
 const IS_LOCAL = location.protocol === 'file:';
 
 // ════════════════════════════════════════════════════════
-// AI NEWS — multi-turn agentic fetch
+// NEWS — NewsAPI.org direct fetch (CORS-enabled, free tier)
+// Get your free key at https://newsapi.org
 // ════════════════════════════════════════════════════════
-async function callClaude(messages, system, useSearch){
-  const body = {
-    model:'claude-sonnet-4-20250514',
-    max_tokens:2000,
-    system,
-    messages,
-  };
-  if(useSearch) body.tools=[{type:'web_search_20250305',name:'web_search'}];
-  const r = await fetch('https://small-tooth-fe4d.frasercanavan.workers.dev',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(body),
+function relativeTime(dateStr){
+  const diff=Date.now()-new Date(dateStr).getTime();
+  const mins=Math.floor(diff/60000);
+  if(mins<60)return mins+'m ago';
+  const hrs=Math.floor(mins/60);
+  if(hrs<24)return hrs+'h ago';
+  return Math.floor(hrs/24)+'d ago';
+}
+
+function guessSentiment(title,desc){
+  const text=((title||'')+(desc||'')).toLowerCase();
+  const pos=['surge','soar','gain','rise','rally','record','beat','strong','growth','profit','up','positive','approve','awarded','wins','bullish'];
+  const neg=['fall','drop','decline','plunge','loss','miss','weak','risk','concern','cut','down','crash','fear','bearish','warning','recall','fraud'];
+  const ps=pos.filter(w=>text.includes(w)).length;
+  const ns=neg.filter(w=>text.includes(w)).length;
+  if(ps>ns)return'positive';
+  if(ns>ps)return'negative';
+  return'neutral';
+}
+
+async function fetchNewsAPI(tab){
+  if(!NEWSAPI_KEY||NEWSAPI_KEY==='715deeac6c264285b766dad44681eaf6'){
+    throw new Error('No NewsAPI key set. Add your key to NEWSAPI_KEY at the top of the file. Get one free at newsapi.org');
+  }
+  const url='https://newsapi.org/v2/everything?'+new URLSearchParams({
+    q: tab.newsQuery,
+    language:'en',
+    sortBy:'publishedAt',
+    pageSize:'8',
+    apiKey: NEWSAPI_KEY,
   });
-  if(!r.ok) throw new Error('API '+r.status);
-  return r.json();
-}
-
-function extractJSON(data){
-  let text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
-  text=text.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
-  const s=text.indexOf('['),e=text.lastIndexOf(']');
-  if(s===-1||e===-1)return null;
-  try{return JSON.parse(text.slice(s,e+1));}catch{return null;}
-}
-
-async function fetchNewsAI(tab){
-  const dateStr=new Date().toLocaleDateString('en-CA',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  const system=`You are a financial news curator for PowerOne Capital Markets, a Canadian investment dealer.
-Search the web for the most recent news then return ONLY a valid JSON array — no markdown, no code fences, no explanation.
-Each element: title (string), summary (1-2 sentences), source (publication name), url (full URL), timeAgo (e.g. "2h ago"), sentiment ("positive"|"negative"|"neutral").
-Return exactly 8 items. Today is ${dateStr}.`;
-
-  const messages=[{role:'user',content:tab.prompt}];
-  let data=await callClaude(messages,system,true);
-
-  // Agentic tool-use loop
-  let itr=0;
-  while(data.stop_reason==='tool_use'&&itr<6){
-    itr++;
-    messages.push({role:'assistant',content:data.content});
-    const results=(data.content||[])
-      .filter(b=>b.type==='tool_use')
-      .map(b=>({type:'tool_result',tool_use_id:b.id,content:Array.isArray(b.content)?JSON.stringify(b.content):(b.content||'')}));
-    if(!results.length)break;
-    messages.push({role:'user',content:results});
-    data=await callClaude(messages,system,true);
+  const r=await fetch(url);
+  if(!r.ok){
+    const err=await r.json().catch(()=>({}));
+    throw new Error(err.message||'NewsAPI error '+r.status);
   }
-
-  const parsed=extractJSON(data);
-  if(parsed&&parsed.length>0)return parsed;
-
-  // Fallback: reformat prose into JSON
-  const prose=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
-  if(prose.length>100){
-    const fix=await callClaude([{role:'user',content:`Convert this news summary into a JSON array of 8 objects with fields: title, summary, source, url, timeAgo, sentiment. Return ONLY the JSON array.\n\n${prose}`}],
-      'Return only valid JSON. No markdown. No explanation.',false);
-    const fp=extractJSON(fix);
-    if(fp&&fp.length>0)return fp;
-  }
-  throw new Error('Could not parse news');
+  const data=await r.json();
+  if(data.status!=='ok')throw new Error(data.message||'NewsAPI returned status: '+data.status);
+  if(!data.articles||data.articles.length===0)throw new Error('No articles returned for this sector');
+  return data.articles.map(a=>({
+    title:   a.title||'Untitled',
+    summary: a.description||'',
+    source:  a.source?.name||'News',
+    url:     a.url||'#',
+    timeAgo: relativeTime(a.publishedAt),
+    sentiment: guessSentiment(a.title,a.description),
+  }));
 }
 
 async function loadNews(id,force=false){
@@ -511,7 +500,7 @@ async function loadNews(id,force=false){
   if(!force&&cache[id]?.status==='done'&&Date.now()-cache[id].ts<TTL){renderNews(id);return;}
   cache[id]={status:'loading'};renderNews(id);
   try{
-    const articles=await fetchNewsAI(tab);
+    const articles=await fetchNewsAPI(tab);
     cache[id]={status:'done',articles,ts:Date.now(),time:timeNow()};
   }catch(e){
     console.error('News fetch error:',e);
@@ -543,30 +532,30 @@ function renderNews(id){
   // ── Local file warning ──
   if(IS_LOCAL&&!s){
     el.innerHTML=refreshBtn+`<div class="host-notice">
-      <h3>⚡ Hosting required for AI news</h3>
-      <p>Because this file is open directly from your computer (<code>file://</code>), browsers block outgoing API calls for security. You need to serve this file from a URL. The fastest free option:</p>
+      <h3>⚡ Hosting required for live news</h3>
+      <p>This file is open from your computer (<code>file://</code>). NewsAPI requires requests from an <code>https://</code> URL. The fastest free option:</p>
       <ol class="host-steps">
         <li>Go to <a class="host-link" href="https://app.netlify.com/drop" target="_blank">app.netlify.com/drop</a></li>
         <li>Drag and drop this HTML file onto the page</li>
         <li>Netlify gives you a live <code>https://</code> URL instantly — no account needed</li>
-        <li>Paste your Anthropic API key into the <code>ANTHROPIC_API_KEY</code> variable at the top of the file first</li>
+        <li>Make sure your <code>NEWSAPI_KEY</code> is set at the top of the file first</li>
       </ol>
-      <p style="margin-top:.75rem;margin-bottom:0">Alternatively use GitHub Pages, Vercel, or any basic web server. The TradingView price widgets above work everywhere including locally.</p>
+      <p style="margin-top:.75rem;margin-bottom:0">Alternatively use GitHub Pages, Vercel, or any basic web server. TradingView widgets work everywhere including locally.</p>
     </div>`;
     return;
   }
 
   if(!s){
-    el.innerHTML=refreshBtn+`<div class="es"><div class="es-ico">🤖</div><div class="es-h">AI News Ready</div><div class="es-p">Click Refresh to pull live headlines via AI-powered web search.</div></div>`;
+    el.innerHTML=refreshBtn+`<div class="es"><div class="es-ico">📰</div><div class="es-h">News Ready</div><div class="es-p">Click Refresh to pull the latest headlines from NewsAPI.org.</div></div>`;
     return;
   }
   if(s.status==='loading'){
-    el.innerHTML=refreshBtn+`<div style="font-size:12px;color:rgba(196,174,255,0.6);margin-bottom:1rem;display:flex;align-items:center;gap:7px"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" style="flex-shrink:0;animation:sp .7s linear infinite"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5a5.5 5.5 0 0 1 3.9 1.6L13.5 2.5V6h-3.5l1.4-1.4" stroke="#C4AEFF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>AI is searching the web for the latest headlines…</div><div class="skg">${Array(6).fill(0).map(()=>`<div class="skc"><div class="skl sk-s"></div><div class="skl sk-t"></div><div class="skl sk-t2"></div><div class="skl sk-p"></div><div class="skl sk-p2"></div></div>`).join('')}</div>`;
+    el.innerHTML=refreshBtn+`<div style="font-size:12px;color:rgba(196,174,255,0.6);margin-bottom:1rem;display:flex;align-items:center;gap:7px"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" style="flex-shrink:0;animation:sp .7s linear infinite"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5a5.5 5.5 0 0 1 3.9 1.6L13.5 2.5V6h-3.5l1.4-1.4" stroke="#C4AEFF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Fetching latest headlines from NewsAPI…</div><div class="skg">${Array(6).fill(0).map(()=>`<div class="skc"><div class="skl sk-s"></div><div class="skl sk-t"></div><div class="skl sk-t2"></div><div class="skl sk-p"></div><div class="skl sk-p2"></div></div>`).join('')}</div>`;
     return;
   }
   if(s.status==='error'){
     const isLocal=IS_LOCAL;
-    el.innerHTML=refreshBtn+(isLocal?`<div class="host-notice"><h3>⚡ Hosting required</h3><p>Open this file via a hosted URL (not <code>file://</code>) for AI news to work. See the instructions above — Netlify Drop takes under a minute.</p></div>`:`<div class="err"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.4"/><path d="M8 5v4M8 11v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>${esc(s.msg)}</span></div>`);
+    el.innerHTML=refreshBtn+(isLocal?`<div class="host-notice"><h3>⚡ Hosting required</h3><p>Open this file via a hosted URL (not <code>file://</code>) for live news to work. See instructions above — Netlify Drop takes under a minute.</p></div>`:`<div class="err"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.4"/><path d="M8 5v4M8 11v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>${esc(s.msg)}</span></div>`);
     return;
   }
 
@@ -589,7 +578,7 @@ function renderNews(id){
     </div>`;
   }).join('');
 
-  const notice=`<div class="ai-news-notice"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.4"/><path d="M8 5v3.5l2.5 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Headlines sourced via AI web search · Links open original articles · Refresh for the latest</div>`;
+  const notice=`<div class="ai-news-notice"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.4"/><path d="M8 5v3.5l2.5 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Headlines via NewsAPI.org · Links open original articles · Refresh for the latest</div>`;
   el.innerHTML=refreshBtn+notice+brief+`<div class="ng">${cards}</div>`;
 }
 
