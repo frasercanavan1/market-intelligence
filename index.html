@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PowerOne Capital Markets — Intelligence Dashboard</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23D4A843'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-weight='900' font-size='16' fill='%2309090C'>P1</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
@@ -632,10 +633,8 @@ async function fetchAllFeeds(tab){
 // If direct feeds all fail, fall back to Google News RSS
 async function fetchGoogleNews(tab){
   const q=GN_QUERIES[tab]||'';
-  // Encode the query string first to make a valid URL (no raw spaces/quotes).
-  // Then pass the whole gnUrl DIRECTLY as rss_url — do NOT wrap in encodeURIComponent again.
-  // rss2json requires a valid URL as rss_url; it passes it as-is to Google News.
   const gnUrl='https://news.google.com/rss/search?q='+encodeURIComponent(q)+'&hl=en&gl=US&ceid=US:en';
+  // gnUrl must itself be encodeURIComponent'd so its & separators don't break the outer URL
   const apiUrl='https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(gnUrl)+'&count=30'+(RSS2JSON_KEY?'&api_key='+RSS2JSON_KEY:'');
   try{
     const r=await fetch(apiUrl,{signal:AbortSignal.timeout(8000)});
