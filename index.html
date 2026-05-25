@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PowerOne Capital Markets — Intelligence Dashboard</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23D4A843'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-weight='900' font-size='16' fill='%2309090C'>P1</text></svg>">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23D4A843'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-weight='900' font-size='16' fill='%2309090C'%3EP1%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
@@ -547,7 +547,22 @@ function renderGrid(gridId,items){
 // with AllOrigins as fallback to fetch the raw XML ourselves.
 // Results are sorted by date and filtered to prefer fresh items (≤72h).
 
-const CACHE={}, TTL=5*60*1000; // 10-min client cache (keeps it snappy between tab switches)
+const CACHE={}, TTL=30*60*1000; // 30-min cache to reduce API calls
+
+// ── Request queue: max 1 rss2json call at a time, 700ms gap between each ─────
+// Prevents 429 rate-limit errors when multiple tabs load at once.
+const _rq=[]; let _rqBusy=false;
+function queuedFetch(url,opts){
+  return new Promise((res,rej)=>{ _rq.push({url,opts,res,rej}); if(!_rqBusy)_drainRQ(); });
+}
+async function _drainRQ(){
+  if(!_rq.length){_rqBusy=false;return;}
+  _rqBusy=true;
+  const {url,opts,res,rej}=_rq.shift();
+  try{res(await fetch(url,opts));}catch(e){rej(e);}
+  setTimeout(_drainRQ,700);
+}
+
 
 function rss2jsonUrl(feedUrl,count){
   const base='https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(feedUrl)+'&count='+(count||20);
@@ -580,7 +595,7 @@ function parsePubDate(str){
 async function fetchOneFeed(feedUrl){
   // Try rss2json first (handles CORS, parses XML for us)
   try{
-    const r=await fetch(rss2jsonUrl(feedUrl),{signal:AbortSignal.timeout(5000)});
+    const r=await queuedFetch(rss2jsonUrl(feedUrl),{signal:AbortSignal.timeout(8000)});
     const d=await r.json();
     if(d.status==='ok'&&d.items?.length){
       return d.items.map(i=>({
@@ -634,10 +649,10 @@ async function fetchAllFeeds(tab){
 async function fetchGoogleNews(tab){
   const q=GN_QUERIES[tab]||'';
   const gnUrl='https://news.google.com/rss/search?q='+encodeURIComponent(q)+'&hl=en&gl=US&ceid=US:en';
-  // gnUrl must itself be encodeURIComponent'd so its & separators don't break the outer URL
+  // gnUrl must be encodeURIComponent'd so its & chars don't break the outer URL
   const apiUrl='https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(gnUrl)+'&count=30'+(RSS2JSON_KEY?'&api_key='+RSS2JSON_KEY:'');
   try{
-    const r=await fetch(apiUrl,{signal:AbortSignal.timeout(8000)});
+    const r=await queuedFetch(apiUrl,{signal:AbortSignal.timeout(12000)});
     const d=await r.json();
     if(d.status==='ok'&&d.items?.length)return d.items;
   }catch{}
