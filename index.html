@@ -426,14 +426,10 @@ const SECTORS = {
 // sorted by pubDate descending, and filtered to last 72 hours.
 // ═══════════════════════════════════════════════════════════════
 const FEEDS = {
-  // Direct RSS — only kept where feeds are known to be open and fresh.
-  // Google News (GN_QUERIES) handles all other tabs.
+  // All direct RSS feeds (Reuters, Kitco, Mining.com etc.) are blocked or
+  // rate-limited. Google News via rss2json is the sole reliable source.
   overview:    [],
-  mining:      [
-    'https://www.mining.com/feed/',
-    'https://www.kitco.com/rss/KitcoNews.xml',
-    'https://investingnews.com/innfeed/gold-investing-news/feed/',
-  ],
+  mining:      [],
   energy:      [],
   healthcare:  [],
   technology:  [],
@@ -504,6 +500,7 @@ function makeTape(){
 }
 
 function makeChart(mountEl,symbol){
+  if(!mountEl||!mountEl.parentNode)return;
   const id='tv'+(++widgetSeq);
   mountEl.id=id;
   new TradingView.widget({
@@ -635,19 +632,14 @@ async function fetchAllFeeds(tab){
 // If direct feeds all fail, fall back to Google News RSS
 async function fetchGoogleNews(tab){
   const q=GN_QUERIES[tab]||'';
-  // Build the GN URL unencoded — rss2json encodes rss_url itself,
-  // so pre-encoding here would cause double-encoding (%20 → %2520) and break queries.
+  // Build gnUrl with RAW unencoded query, then encode the whole URL once
+  // for the rss_url parameter. rss2json decodes it on their server and fetches
+  // Google News correctly. Pre-encoding q would cause double-encoding (%20→%2520).
   const gnUrl='https://news.google.com/rss/search?q='+q+'&hl=en&gl=US&ceid=US:en';
   try{
-    const r=await fetch(rss2jsonUrl(gnUrl,30),{signal:AbortSignal.timeout(8000)});
+    const r=await fetch('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(gnUrl)+'&count=30'+(RSS2JSON_KEY?'&api_key='+RSS2JSON_KEY:''),{signal:AbortSignal.timeout(8000)});
     const d=await r.json();
     if(d.status==='ok'&&d.items?.length)return d.items;
-  }catch{}
-  // Fallback: AllOrigins — here we DO encode since we're fetching the URL directly
-  try{
-    const r=await fetch(allOriginsUrl(encodeURIComponent(gnUrl)),{signal:AbortSignal.timeout(8000)});
-    const d=await r.json();
-    if(d.contents)return parseXML(d.contents);
   }catch{}
   return[];
 }
