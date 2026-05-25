@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PowerOne Capital Markets — Intelligence Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<script src="https://s3.tradingview.com/tv.js"></script>
+<style>
+  :root {
+    --bg:#09090C; --bg-2:#0F0F14; --bg-3:#141419; --bg-card:#111116;
+    --gold:#D4A843; --gold-dim:#A07C2E; --gold-border:rgba(212,168,67,0.25);
+    --text:#E8E6E0; --text-muted:#888077; --text-dim:#555248;
+    --green:#3DAA6B; --red:#D94F4F; --border:rgba(255,255,255,0.06);
+    --r:6px; --rl:10px;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  html{font-size:15px;scroll-behavior:smooth;}
+  body{background:var(--bg);color:var(--text);font-family:'Instrument Sans',sans-serif;min-height:100vh;overflow-x:hidden;}
+
+  /* HEADER */
+  #site-header{position:sticky;top:0;z-index:100;background:rgba(9,9,12,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--gold-border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:56px;gap:20px;}
+  .header-logo{display:flex;align-items:center;gap:12px;flex-shrink:0;}
+  .logo-mark{width:34px;height:34px;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:14px;color:var(--bg);flex-shrink:0;}
+  .logo-text{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;letter-spacing:0.04em;text-transform:uppercase;line-height:1.2;}
+  .logo-sub{font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold-dim);}
+  .header-right{display:flex;align-items:center;gap:20px;flex-shrink:0;}
+  .mkt-ind{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);}
+  .mkt-dot{width:7px;height:7px;border-radius:50%;background:var(--text-dim);transition:background .3s;}
+  .mkt-dot.open{background:var(--green);box-shadow:0 0 6px var(--green);}
+  .mkt-dot.closed{background:var(--red);}
+  #live-clock{font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:var(--gold);letter-spacing:0.08em;}
+
+  /* TAPE */
+  #tape-wrap{background:var(--bg-2);border-bottom:1px solid var(--border);min-height:46px;}
+
+  /* TAB NAV */
+  #tab-nav{display:flex;align-items:stretch;border-bottom:1px solid var(--border);background:var(--bg-2);overflow-x:auto;scrollbar-width:none;position:sticky;top:56px;z-index:90;}
+  #tab-nav::-webkit-scrollbar{display:none;}
+  .tab-btn{display:flex;align-items:center;gap:8px;padding:0 22px;height:46px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-muted);font-family:'Syne',sans-serif;font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;white-space:nowrap;transition:color .2s,border-color .2s;flex-shrink:0;}
+  .tab-btn:hover{color:var(--text);}
+  .tab-btn.active{color:var(--gold);border-bottom-color:var(--gold);}
+  .tab-btn svg{width:14px;height:14px;opacity:0.7;flex-shrink:0;}
+  .tab-btn.active svg{opacity:1;}
+
+  /* PANELS */
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+  .panel-inner{max-width:1400px;margin:0 auto;padding:32px 28px;}
+
+  /* SECTION */
+  .sec-hdr{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);}
+  .sec-title{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);}
+  .sec-meta{font-size:11px;color:var(--text-dim);letter-spacing:0.04em;}
+
+  .sub-lbl{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:var(--gold-dim);margin:28px 0 10px;display:flex;align-items:center;gap:10px;}
+  .sub-lbl::after{content:'';flex:1;height:1px;background:var(--border);}
+
+  /* PRICE GRID */
+  .price-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:8px;}
+  .price-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;display:flex;flex-direction:column;transition:border-color .2s;}
+  .price-card:hover{border-color:var(--gold-border);}
+  .tv-frame{flex:1;min-height:150px;}
+  .price-card-lbl{padding:8px 12px 10px;border-top:1px solid var(--border);display:flex;align-items:baseline;justify-content:space-between;gap:6px;}
+  .price-card-name{font-family:'Syne',sans-serif;font-size:11px;font-weight:600;color:var(--text);line-height:1.3;}
+  .price-card-ticker{font-size:10px;font-weight:600;letter-spacing:0.08em;color:var(--gold-dim);white-space:nowrap;}
+
+  .private-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--rl);padding:20px 18px;display:flex;flex-direction:column;gap:6px;}
+  .private-card-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:var(--text);}
+  .private-card-badge{font-size:9.5px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);background:var(--bg-3);border:1px solid var(--border);border-radius:3px;padding:2px 7px;display:inline-block;width:fit-content;}
+  .private-card-desc{font-size:11.5px;color:var(--text-muted);line-height:1.5;}
+
+  /* BRIEF */
+  .brief-box{background:linear-gradient(135deg,rgba(212,168,67,0.06),rgba(212,168,67,0.02));border:1px solid var(--gold-border);border-radius:var(--rl);padding:22px 26px;margin-bottom:28px;position:relative;overflow:hidden;}
+  .brief-box::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.4;}
+  .brief-hdr{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+  .brief-lbl{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:var(--gold);}
+  .brief-date{font-size:10px;color:var(--text-dim);letter-spacing:0.06em;}
+  .brief-dot{width:5px;height:5px;border-radius:50%;background:var(--gold);opacity:.5;}
+  .brief-body{font-size:13px;line-height:1.7;color:var(--text-muted);}
+  .brief-body.loading{color:var(--text-dim);font-style:italic;}
+
+  /* NEWS */
+  .news-ctrl{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+  .refresh-btn{display:flex;align-items:center;gap:6px;background:none;border:1px solid var(--border);border-radius:var(--r);padding:6px 12px;color:var(--text-muted);font-family:'Instrument Sans',sans-serif;font-size:11px;cursor:pointer;transition:border-color .2s,color .2s;}
+  .refresh-btn:hover{border-color:var(--gold-border);color:var(--gold);}
+  .refresh-btn svg{width:12px;height:12px;}
+  .cache-note{font-size:10.5px;color:var(--text-dim);}
+  .news-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px;min-height:120px;}
+  .news-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;display:flex;flex-direction:column;gap:8px;transition:border-color .2s,transform .15s;text-decoration:none;cursor:pointer;}
+  .news-card:hover{border-color:var(--gold-border);transform:translateY(-1px);}
+  .news-src{font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold-dim);}
+  .news-ttl{font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:var(--text);line-height:1.4;}
+  .news-desc{font-size:11.5px;color:var(--text-muted);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .news-time{font-size:10px;color:var(--text-dim);margin-top:auto;}
+  .news-loading,.news-empty{grid-column:1/-1;display:flex;align-items:center;justify-content:center;padding:40px;color:var(--text-dim);font-size:13px;font-style:italic;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .spin{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;}
+
+  /* NEWS AGE BADGE */
+  .news-age-warn{display:inline-block;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:2px 6px;border-radius:3px;margin-left:6px;vertical-align:middle;}
+  .age-fresh{background:rgba(61,170,107,0.15);color:var(--green);}
+  .age-old{background:rgba(212,168,67,0.15);color:var(--gold);}
+  .age-stale{background:rgba(217,79,79,0.15);color:var(--red);}
+
+  /* KEY NOTICE */
+  .api-notice{background:rgba(212,168,67,0.08);border:1px solid var(--gold-border);border-radius:var(--r);padding:12px 16px;margin-bottom:20px;font-size:11.5px;color:var(--text-muted);line-height:1.6;}
+  .api-notice strong{color:var(--gold);}
+  .api-notice code{background:var(--bg-3);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:11px;color:var(--text);}
+
+  /* SOURCES */
+  #sources-panel{margin:0 28px 40px;border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;}
+  .src-toggle{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:var(--bg-2);cursor:pointer;user-select:none;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);transition:color .2s;}
+  .src-toggle:hover{color:var(--text);}
+  .src-toggle svg{width:14px;height:14px;transition:transform .2s;}
+  .src-toggle.open svg{transform:rotate(180deg);}
+  .src-body{display:none;padding:18px 20px;background:var(--bg-card);}
+  .src-body.open{display:block;}
+  .src-list{display:flex;flex-wrap:wrap;gap:6px;}
+  .src-tag{font-size:10px;padding:3px 8px;background:var(--bg-3);border:1px solid var(--border);border-radius:3px;color:var(--text-muted);}
+
+  footer{padding:24px 28px;border-top:1px solid var(--border);text-align:center;font-size:11px;color:var(--text-dim);line-height:1.6;letter-spacing:0.04em;}
+  footer strong{color:var(--gold-dim);font-weight:600;}
+
+  @media(max-width:700px){
+    .panel-inner{padding:20px 16px;}#site-header{padding:0 16px;}
+    .logo-text{display:none;}.price-grid{grid-template-columns:repeat(2,1fr);}
+    .news-grid{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<header id="site-header">
+  <div class="header-logo">
+    <div class="logo-mark">P1</div>
+    <div><div class="logo-text">PowerOne Capital Markets</div><div class="logo-sub">Intelligence Dashboard</div></div>
+  </div>
+  <div class="header-right">
+    <div class="mkt-ind"><div class="mkt-dot" id="mkt-dot"></div><span id="mkt-status">Checking…</span></div>
+    <div id="live-clock">--:--:-- ET</div>
+  </div>
+</header>
+
+<div id="tape-wrap"><div id="tape-inner"></div></div>
+
+<nav id="tab-nav">
+  <button class="tab-btn active" data-tab="overview">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Overview
+  </button>
+  <button class="tab-btn" data-tab="mining">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 19 2 19"/></svg>Mining
+  </button>
+  <button class="tab-btn" data-tab="energy">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>Energy
+  </button>
+  <button class="tab-btn" data-tab="healthcare">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Health Care
+  </button>
+  <button class="tab-btn" data-tab="technology">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="12" y1="17" x2="12" y2="21"/><line x1="8" y1="21" x2="16" y2="21"/></svg>Technology
+  </button>
+  <button class="tab-btn" data-tab="realestate">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Real Estate
+  </button>
+  <button class="tab-btn" data-tab="hospitality">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>Hospitality
+  </button>
+</nav>
+
+
+<!-- OVERVIEW -->
+<section class="tab-panel active" id="tab-overview">
+  <div class="panel-inner">
+    <div class="sec-hdr"><span class="sec-title">Macro Instruments — Live Prices</span><span class="sec-meta">Real-time via TradingView</span></div>
+    <div class="price-grid" id="grid-overview"></div>
+    <div class="brief-box" style="margin-top:32px">
+      <div class="brief-hdr"><span class="brief-lbl">Today's Brief</span><div class="brief-dot"></div><span class="brief-date" id="bd-overview"></span></div>
+      <div class="brief-body loading" id="bt-overview">Loading market summary…</div>
+    </div>
+    <div class="sec-hdr"><span class="sec-title">Global Macro News</span>
+      <div class="news-ctrl">
+        <button class="refresh-btn" onclick="refreshNews('overview')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Refresh</button>
+        <span class="cache-note" id="cn-overview"></span>
+      </div>
+    </div>
+    <div class="news-grid" id="ng-overview"><div class="news-loading"><span class="spin"></span>&nbsp;&nbsp;Loading…</div></div>
+  </div>
+</section>
+
+<!-- MINING -->
+<section class="tab-panel" id="tab-mining">
+  <div class="panel-inner">
+    <div class="sec-hdr"><span class="sec-title">Mining Portfolio — Live Prices</span></div>
+    <div class="sub-lbl">Gold</div>           <div class="price-grid" id="grid-mg"></div>
+    <div class="sub-lbl">Silver</div>         <div class="price-grid" id="grid-ms"></div>
+    <div class="sub-lbl">Copper</div>         <div class="price-grid" id="grid-mc"></div>
+    <div class="sub-lbl">Lithium</div>        <div class="price-grid" id="grid-ml"></div>
+    <div class="sub-lbl">Uranium</div>        <div class="price-grid" id="grid-mu"></div>
+    <div class="sub-lbl">Diversified &amp; Other</div><div class="price-grid" id="grid-mo"></div>
+    <div class="brief-box" style="margin-top:36px">
+      <div class="brief-hdr"><span class="brief-lbl">Today's Brief — Mining &amp; Resources</span><div class="brief-dot"></div><span class="brief-date" id="bd-mining"></span></div>
+      <div class="brief-body loading" id="bt-mining">Loading…</div>
+    </div>
+    <div class="sec-hdr"><span class="sec-title">Mining &amp; Resources News</span>
+      <div class="news-ctrl"><button class="refresh-btn" onclick="refreshNews('mining')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Refresh</button><span class="cache-note" id="cn-mining"></span></div>
+    </div>
+    <div class="news-grid" id="ng-mining"><div class="news-loading"><span class="spin"></span>&nbsp;&nbsp;Loading…</div></div>
+  </div>
+</section>
+
+<!-- ENERGY -->
+<section class="tab-panel" id="tab-energy">
+  <div class="panel-inner">
+    <div class="sec-hdr"><span class="sec-title">Energy &amp; Cleantech — Live Prices</span></div>
+    <div class="price-grid" id="grid-energy"></div>
+    <div class="brief-box" style="margin-top:36px">
+      <div class="brief-hdr"><span class="brief-lbl">Today's Brief — Energy &amp; Cleantech</span><div class="brief-dot"></div><span class="brief-date" id="bd-energy"></span></div>
+      <div class="brief-body loading" id="bt-energy">Loading…</div>
+    </div>
+    <div class="sec-hdr"><span class="sec-title">Energy &amp; Cleantech News</span>
+      <div class="news-ctrl"><button class="refresh-btn" onclick="refreshNews('energy')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Refresh</button><span class="cache-note" id="cn-energy"></span></div>
+    </div>
+    <div class="news-grid" id="ng-energy"><div class="news-loading"><span class="spin"></span>&nbsp;&nbsp;Loading…</div></div>
+  </div>
+</section>
+
+<!-- HEALTHCARE -->
+<section class="tab-panel" id="tab-healthcare">
+  <div class="panel-inner">
+    <div class="sec-hdr"><span class="sec-title">Health &amp; Life Sciences — Live Prices</span></div>
+    <div class="price-grid" id="grid-health"></div>
+    <div class="brief-box" style="margin-top:36px">
+      <div class="brief-hdr"><span class="brief-lbl">Today's Brief — Health &amp; Life Sciences</span><div class="brief-dot"></div><span class="brief-date" id="bd-healthcare"></span></div>
+      <div class="brief-body loading" id="bt-healthcare">Loading…</div>
+    </div>
+    <div class="sec-hdr"><span class="sec-title">Health &amp; Life Sciences News</span>
+      <div class="news-ctrl"><button class="refresh-btn" onclick="refreshNews('healthcare')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Refresh</button><span class="cache-note" id="cn-healthcare"></span></div>
+    </div>
+    <div class="news-grid" id="ng-healthcare"><div class="news-loading"><span class="spin"></span>&nbsp;&nbsp;Loading…</div></div>
+  </div>
+</section>
+
+<!-- TECHNOLOGY -->
+<section class="tab-panel" id="tab-technology">
+  <div class="panel-inner">
+    <div class="sec-hdr"><span class="sec-title">Technology — Live Prices</span></div>
+    <div class="price-grid" id="grid-tech"></div>
+    <div class="brief-box" style="margin-top:36px">
+      <div class="brief-hdr"><span class="brief-lbl">Today's Brief — Technology</span><div class="brief-dot"></div><span class="brief-date" id="bd-technology"></span></div>
+      <div class="brief-body loading" id="bt-technology">Loading…</div>
+    </div>
+    <div class="sec-hdr"><span class="sec-title">Technology News</span>
+      <div class="news-ctrl"><button class="refresh-btn" onclick="refreshNews('technology')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Refresh</button><span class="cache-note" id="cn-technology"></span></div>
+    </div>
+    <div class="news-grid" id="ng-technology"><div class="news-loading"><span class="spin"></span>&nbsp;&nbsp;Loading…</div></div>
+  </div>
+</section>
+
+<!-- REAL ESTATE -->
+<section class="tab-panel" id="tab-realestate">
+  <div class="panel-inner">
+    <div class="sec-hdr"><span class="sec-title">Real Estate — Live Prices</span></div>
+    <div class="price-grid" id="grid-re"></div>
+    <div class="brief-box" style="margin-top:36px">
+      <div class="brief-hdr"><span class="brief-lbl">Today's Brief — Real Estate</span><div class="brief-dot"></div><span class="brief-date" id="bd-realestate"></span></div>
+      <div class="brief-body loading" id="bt-realestate">Loading…</div>
+    </div>
+    <div class="sec-hdr"><span class="sec-title">Real Estate News</span>
+      <div class="news-ctrl"><button class="refresh-btn" onclick="refreshNews('realestate')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Refresh</button><span class="cache-note" id="cn-realestate"></span></div>
+    </div>
+    <div class="news-grid" id="ng-realestate"><div class="news-loading"><span class="spin"></span>&nbsp;&nbsp;Loading…</div></div>
+  </div>
+</section>
+
+<!-- HOSPITALITY -->
+<section class="tab-panel" id="tab-hospitality">
+  <div class="panel-inner">
+    <div class="sec-hdr"><span class="sec-title">Hospitality &amp; Lifestyle</span><span class="sec-meta">Private holdings — not listed</span></div>
+    <div class="price-grid" id="grid-hosp"></div>
+    <div class="brief-box" style="margin-top:36px">
+      <div class="brief-hdr"><span class="brief-lbl">Today's Brief — Hospitality &amp; Lifestyle</span><div class="brief-dot"></div><span class="brief-date" id="bd-hospitality"></span></div>
+      <div class="brief-body loading" id="bt-hospitality">Loading…</div>
+    </div>
+    <div class="sec-hdr"><span class="sec-title">Hospitality &amp; Lifestyle News</span>
+      <div class="news-ctrl"><button class="refresh-btn" onclick="refreshNews('hospitality')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Refresh</button><span class="cache-note" id="cn-hospitality"></span></div>
+    </div>
+    <div class="news-grid" id="ng-hospitality"><div class="news-loading"><span class="spin"></span>&nbsp;&nbsp;Loading…</div></div>
+  </div>
+</section>
+
+<div id="sources-panel">
+  <div class="src-toggle" id="src-toggle" onclick="toggleSrc()">
+    <span>Approved News Sources</span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+  </div>
+  <div class="src-body" id="src-body"><div class="src-list" id="src-list"></div></div>
+</div>
+
+<footer>
+  <strong>PowerOne Capital Markets</strong> · Market Intelligence Dashboard · For internal use only<br>
+  Data sourced from Google News RSS &amp; TradingView. Not investment advice.
+</footer>
+
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// CONFIGURATION
+// ═══════════════════════════════════════════════════════════════
+
+// rss2json.com API key — free tier at rss2json.com gives 1M req/month.
+// Replace with your own key for production. Without a key the public
+// endpoint still works but may be rate-limited.
+const RSS2JSON_KEY = 'xihiuvptfwmew3orurtaqfuu4w3cl5gwxuhbh3jt';   // ← paste your free key here, e.g. 'abc123xyz'
+
+// ═══════════════════════════════════════════════════════════════
+// PORTFOLIO — TradingView symbol format: EXCHANGE:TICKER
+// Exchange map:  .TO → TSX   .V → TSXV   .CN → CSE   .NE → NEO
+// ═══════════════════════════════════════════════════════════════
+const SECTORS = {
+  overview: [
+    { name:'Gold',          symbol:'OANDA:XAUUSD',    label:'XAUUSD' },
+    { name:'Silver',        symbol:'OANDA:XAGUSD',    label:'XAGUSD' },
+    { name:'Platinum',      symbol:'OANDA:XPTUSD',    label:'XPTUSD' },
+    { name:'Copper',        symbol:'COMEX:HG1!',      label:'HG1! · COMEX' },
+    { name:'WTI Crude',     symbol:'TVC:USOIL',        label:'USOIL · TVC' },
+    { name:'S&P 500',       symbol:'FOREXCOM:SPXUSD', label:'SPX' },
+    { name:'Dow Jones',     symbol:'TVC:DJI',          label:'DJI · TVC' },
+    { name:'Nasdaq Comp.',  symbol:'NASDAQ:IXIC',      label:'IXIC · NASDAQ' },
+    { name:'TSX Composite', symbol:'TSX:TSX',          label:'TSX' },
+    { name:'TSX Venture',   symbol:'TSX:JX',           label:'JX · TSX' },
+    { name:'CSE Composite', symbol:'CSE:CSECOMP',      label:'CSECOMP · CSE' },
+    { name:'USD / CAD',     symbol:'OANDA:USDCAD',     label:'USDCAD · OANDA' },
+  ],
+
+  // ── MINING ──────────────────────────────────────────────────
+  'mining-gold': [
+    { name:'White Gold Corp.',         symbol:'TSXV:WGO',  label:'WGO.V' },
+    { name:'Big Ridge Gold Corp.',     symbol:'TSXV:BRAU', label:'BRAU.V' },
+    { name:'Canterra Minerals Corp.',  symbol:'TSXV:CTM',  label:'CTM.V' },
+    { name:'Conquest Resources Ltd.',  symbol:'TSXV:CQR',  label:'CQR.V' },
+    { name:'Great Pacific Gold Corp',  symbol:'TSXV:GPAC', label:'GPAC.V' },
+    { name:'Halcones Precious Metals', symbol:'TSXV:HPM',  label:'HPM.V' },
+    { name:'Green Shift Commodities',  symbol:'TSXV:GCOM', label:'GCOM.V' },
+    { name:'Rhyolite Resources Ltd.',  symbol:'TSXV:RYE',  label:'RYE.V' },
+    { name:'Rio2 Limited',             symbol:'TSX:RIO',   label:'RIO.TO' },
+  ],
+  'mining-silver': [
+    { name:'Silver Storm Mining Ltd.', symbol:'TSXV:SVRS', label:'SVRS.V' },
+  ],
+  'mining-copper': [
+    { name:'Adyton Resources Corp.',   symbol:'TSXV:ADY',  label:'ADY.V' },
+    { name:'Koryx Copper Inc.',        symbol:'TSXV:KRY',  label:'KRY.V' },
+    { name:'Ev Nickel Inc.',           symbol:'TSXV:EVNI', label:'EVNI.V' },
+  ],
+  'mining-lithium': [
+    { name:'Laramide Resources Ltd.',  symbol:'TSX:LAM',   label:'LAM.TO' },
+    { name:'Lithium Ionic Corp.',      symbol:'TSXV:LTH',  label:'LTH.V' },
+    { name:'Full Circle Lithium Corp.',symbol:'TSXV:FCLI', label:'FCLI.V' },
+    { name:'Champion Elec. Metals',   symbol:'CSE:LTHM',  label:'LTHM.CN' },
+  ],
+  'mining-uranium': [
+    { name:'NeoTerrex Minerals Inc.',  symbol:'TSXV:NTX',  label:'NTX.V' },
+  ],
+  'mining-other': [
+    { name:'Collective Mining Ltd.',   symbol:'TSX:CNL',   label:'CNL.TO' },
+    { name:'BC Moly Ltd.',             symbol:'TSXV:BM',   label:'BM.V' },
+    { name:'HydroGraph Clean Power',   symbol:'CSE:HG',    label:'HG.CN' },
+    { name:'Greenland Resources Inc.', symbol:'NEO:MOLY',  label:'MOLY.NE' },
+    { name:'Miata Metals Corp.',       symbol:'TSXV:MMET', label:'MMET.V' },
+    { name:'Nevada Lithium Resources', symbol:'TSXV:NVLH', label:'NVLH.V' },
+    { name:'Rok Resources',            symbol:'TSXV:ROK',  label:'ROK.V' },
+    { name:'RUA Gold Inc.',            symbol:'TSX:RUA',   label:'RUA.TO' },
+  ],
+
+  // ── ENERGY ──────────────────────────────────────────────────
+  energy: [
+    { name:'enCore Energy Corp.',             symbol:'TSXV:EU',   label:'EU.V' },
+    { name:'NG Energy International Corp.',   symbol:'TSX:GASX',  label:'GASX.TO' },
+    { name:'CVW Cleantech Inc.',              symbol:'TSXV:CVW',  label:'CVW.V' },
+    { name:'Base Carbon Inc.',                symbol:'NEO:BCBN',  label:'BCBN.NE' },
+    { name:'Regenera Insights Inc.',          symbol:'CSE:RGEN',  label:'RGEN.CN' },
+    { name:'Maritime Launch Services',        symbol:'NEO:MAXQ',  label:'MAXQ.NE' },
+  ],
+
+  // ── HEALTHCARE ──────────────────────────────────────────────
+  health: [
+    { name:'Aurora Spine Corp.',              symbol:'TSXV:ASG',  label:'ASG.V' },
+    { name:'Blueberries Medical Corp.',       symbol:'CSE:BBM',   label:'BBM.CN' },
+    { name:'Defence Therapeutics',           symbol:'CSE:DTC',   label:'DTC.CN' },
+    { name:'Medipharm Labs Corp.',            symbol:'TSX:LABS',  label:'LABS.TO' },
+    { name:'Comprehensive Health Systems',   symbol:'TSXV:CHS',  label:'CHS.V' },
+    { name:'Restart Life Sciences Corp.',    symbol:'CSE:HEAL',  label:'HEAL.CN' },
+    { name:'NuGen Medical Devices Inc.',     symbol:'TSXV:NGMD', label:'NGMD.V' },
+    { name:'RealBotix Corp.',                symbol:'TSXV:XBOT', label:'XBOT.V' },
+  ],
+
+  // ── TECHNOLOGY ──────────────────────────────────────────────
+  tech: [
+    { name:'WonderFi Technologies Inc.',     symbol:'TSX:WNDR',  label:'WNDR.TO' },
+    { name:'Intouch Insight Ltd.',           symbol:'TSXV:INX',  label:'INX.V' },
+    { name:'FRNT Financial Inc.',            symbol:'TSXV:FRNT', label:'FRNT.V' },
+    { name:'Cult Food Science Corp.',        symbol:'CSE:CULT',  label:'CULT.CN' },
+  ],
+
+  // ── REAL ESTATE ─────────────────────────────────────────────
+  re: [
+    { name:'Firm Capital Mortgage Corp.',   symbol:'TSX:FC',    label:'FC.TO' },
+    { name:'Superior Plus Corp.',           symbol:'TSX:SPB',   label:'SPB.TO' },
+  ],
+
+  // ── HOSPITALITY (all private) ────────────────────────────────
+  hosp: [
+    { name:'Forno Cultura',    desc:'Artisanal Italian bakery & café group, Toronto. Award-winning pastry and bread.' },
+    { name:'STK Toronto',      desc:'Upscale steakhouse concept, King West Toronto. Premium dining and private events.' },
+    { name:'Villa Le Calvane', desc:'Tuscan wine estate & agriturismo, Montespertoli, Firenze, Italy.' },
+    { name:'La Terrazza',      desc:'Italian fine dining & event venue, Toronto. Private club and hospitality.' },
+  ],
+};
+
+// ═══════════════════════════════════════════════════════════════
+// NEWS SOURCES — multiple direct RSS feeds per sector
+// These are fetched fresh each time with no caching layer,
+// sorted by pubDate descending, and filtered to last 72 hours.
+// ═══════════════════════════════════════════════════════════════
+const FEEDS = {
+  // All direct RSS feeds (Reuters, Kitco, Mining.com etc.) are blocked or
+  // rate-limited. Google News via rss2json is the sole reliable source.
+  overview:    [],
+  mining:      [],
+  energy:      [],
+  healthcare:  [],
+  technology:  [],
+  realestate:  [],
+  hospitality: [],
+};
+
+// Google News RSS as a final fallback — queried with sector keywords
+const GN_QUERIES = {
+  // Note: date operators (when:Nd) are NOT used here — they get URL-encoded
+  // and break the Google News RSS parser. Freshness is enforced client-side.
+  overview:    'stock markets OR "S&P 500" OR "Dow Jones" OR TSX OR "Federal Reserve" OR "Bank of Canada" OR gold OR "crude oil" OR inflation OR "interest rates" OR recession OR commodities OR "trade war" OR tariffs',
+  mining:      'mining OR "gold price" OR "silver price" OR lithium OR uranium OR copper OR "drill results" OR "mineral exploration" OR "junior mining" OR "precious metals" OR "mining stocks"',
+  energy:      'oil OR "crude oil" OR "natural gas" OR OPEC OR "energy crisis" OR uranium OR "nuclear power" OR "renewable energy" OR LNG OR pipeline OR "energy stocks" OR "oil price"',
+  healthcare:  'biotech OR pharmaceutical OR FDA OR "drug approval" OR "clinical trial" OR "medical device" OR "life sciences" OR oncology OR "healthcare stocks" OR "drug trial"',
+  technology:  '"artificial intelligence" OR AI OR cryptocurrency OR Bitcoin OR blockchain OR cybersecurity OR fintech OR "tech stocks" OR semiconductor OR "venture capital" OR startup',
+  realestate:  'REIT OR "real estate" OR housing OR "mortgage rate" OR "commercial real estate" OR "home sales" OR "property market" OR "housing market" OR "real estate investment"',
+  hospitality: 'restaurant OR hospitality OR "food and beverage" OR "luxury travel" OR wine OR hotel OR tourism OR dining OR "consumer spending" OR "travel industry"',
+};
+
+const APPROVED = [
+  'Reuters','Bloomberg','Financial Times','Globe and Mail','Financial Post',
+  'BNN Bloomberg','CBC','Canadian Press','Mining.com','Kitco','Northern Miner',
+  'S&P Global','Morningstar','MarketWatch','Wall Street Journal',
+  'The Economist','BBC','Associated Press','The Logic','Business Insider',
+  'Stockhouse','GlobeNewswire','Newswire','Junior Mining Network',
+  'Resource World','Proactive','CEO.CA','Investing News',
+];
+
+// ═══════════════════════════════════════════════════════════════
+// CLOCK
+// ═══════════════════════════════════════════════════════════════
+function updateClock(){
+  const now=new Date();
+  document.getElementById('live-clock').textContent=
+    new Intl.DateTimeFormat('en-CA',{timeZone:'America/Toronto',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(now)+' ET';
+  const tor=new Date(now.toLocaleString('en-US',{timeZone:'America/Toronto'}));
+  const m=tor.getHours()*60+tor.getMinutes(),d=tor.getDay();
+  const open=d>=1&&d<=5&&m>=570&&m<960;
+  document.getElementById('mkt-dot').className='mkt-dot '+(open?'open':'closed');
+  document.getElementById('mkt-status').textContent=open?'TSX Open':'Market Closed';
+}
+setInterval(updateClock,1000); updateClock();
+
+// ═══════════════════════════════════════════════════════════════
+// TRADINGVIEW
+// ═══════════════════════════════════════════════════════════════
+let widgetSeq=0;
+
+function makeTape(){
+  const wrap=document.getElementById('tape-inner');
+  wrap.innerHTML='';
+  const wc=document.createElement('div');
+  wc.className='tradingview-widget-container';
+  const wi=document.createElement('div');
+  wi.className='tradingview-widget-container__widget';
+  wc.appendChild(wi); wrap.appendChild(wc);
+  new TradingView.widget({
+    "width":"100%","height":46,"isTransparent":true,
+    "displayMode":"compact","colorTheme":"dark","locale":"en",
+    "symbols":[
+      ["Gold","OANDA:XAUUSD|1D"],["Silver","OANDA:XAGUSD|1D"],
+      ["Copper","COMEX:HG1!|1D"],["WTI","NYMEX:CL1!|1D"],
+      ["S&P 500","FOREXCOM:SPXUSD|1D"],["TSX","TSX:OSPTSX|1D"],
+      ["CAD/USD","FX:CADUSD|1D"],["BTC","BITSTAMP:BTCUSD|1D"]
+    ]
+  });
+}
+
+function makeChart(mountEl,symbol){
+  if(!mountEl||!mountEl.parentNode)return;
+  const id='tv'+(++widgetSeq);
+  mountEl.id=id;
+  new TradingView.widget({
+    "container_id":id,"width":"100%","height":150,
+    "symbol":symbol,"interval":"D","timezone":"America/Toronto",
+    "theme":"dark","style":"3","locale":"en",
+    "toolbar_bg":"#111116","hide_top_toolbar":true,"hide_legend":false,
+    "withdateranges":false,"hide_side_toolbar":true,
+    "allow_symbol_change":false,"save_image":false,
+    "show_popup_button":false,"autosize":false,
+  });
+}
+
+function renderGrid(gridId,items){
+  const grid=document.getElementById(gridId); if(!grid)return;
+  grid.innerHTML='';
+  items.forEach(item=>{
+    if(!item.symbol){
+      const c=document.createElement('div'); c.className='private-card';
+      c.innerHTML=`<div class="private-card-name">${item.name}</div><div class="private-card-badge">Private — Not Listed</div><div class="private-card-desc">${item.desc||''}</div>`;
+      grid.appendChild(c); return;
+    }
+    const card=document.createElement('div'); card.className='price-card';
+    const frame=document.createElement('div'); frame.className='tv-frame'; card.appendChild(frame);
+    const lbl=document.createElement('div'); lbl.className='price-card-lbl';
+    lbl.innerHTML=`<span class="price-card-name">${item.name}</span><span class="price-card-ticker">${item.label||item.symbol.split(':').pop()}</span>`;
+    card.appendChild(lbl); grid.appendChild(card);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      try{ makeChart(frame,item.symbol); }
+      catch(e){
+        frame.style.cssText='display:flex;align-items:center;justify-content:center;padding:16px;min-height:90px;';
+        frame.innerHTML=`<a href="https://www.tradingview.com/symbols/${item.symbol.replace(':','/')}" target="_blank" rel="noopener" style="font-size:11px;color:var(--gold);text-decoration:none;font-family:'Syne',sans-serif;font-weight:600;">${item.symbol.split(':').pop()} — View on TradingView ↗</a>`;
+      }
+    }));
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NEWS ENGINE — multi-source RSS with freshness enforcement
+// ═══════════════════════════════════════════════════════════════
+
+// We use rss2json.com as the primary CORS bridge (supports any RSS URL),
+// with AllOrigins as fallback to fetch the raw XML ourselves.
+// Results are sorted by date and filtered to prefer fresh items (≤72h).
+
+const CACHE={}, TTL=5*60*1000; // 10-min client cache (keeps it snappy between tab switches)
+
+function rss2jsonUrl(feedUrl,count){
+  const base='https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(feedUrl)+'&count='+(count||20);
+  return RSS2JSON_KEY ? base+'&api_key='+RSS2JSON_KEY : base;
+}
+
+function allOriginsUrl(feedUrl){
+  return 'https://api.allorigins.win/get?url='+encodeURIComponent(feedUrl);
+}
+
+function parseXML(text){
+  try{
+    const xml=new DOMParser().parseFromString(text,'text/xml');
+    return Array.from(xml.querySelectorAll('item')).map(i=>({
+      title:i.querySelector('title')?.textContent||'',
+      link:i.querySelector('link')?.textContent||'',
+      description:i.querySelector('description')?.textContent||'',
+      pubDate:i.querySelector('pubDate')?.textContent||'',
+      source:i.querySelector('source')?.textContent||'',
+    }));
+  }catch{return[];}
+}
+
+function parsePubDate(str){
+  if(!str)return 0;
+  const d=new Date(str);
+  return isNaN(d.getTime())?0:d.getTime();
+}
+
+async function fetchOneFeed(feedUrl){
+  // Try rss2json first (handles CORS, parses XML for us)
+  try{
+    const r=await fetch(rss2jsonUrl(feedUrl),{signal:AbortSignal.timeout(5000)});
+    const d=await r.json();
+    if(d.status==='ok'&&d.items?.length){
+      return d.items.map(i=>({
+        title:i.title||'',
+        link:i.link||i.guid||'',
+        description:i.description||i.content||'',
+        pubDate:i.pubDate||'',
+        source:d.feed?.title||'',
+      }));
+    }
+  }catch{}
+
+  // Fallback: fetch raw XML via AllOrigins
+  try{
+    const r=await fetch(allOriginsUrl(feedUrl),{signal:AbortSignal.timeout(5000)});
+    const d=await r.json();
+    if(d.contents) return parseXML(d.contents);
+  }catch{}
+
+  return[];
+}
+
+// Fetch all feeds for a tab in parallel, merge, sort, deduplicate
+async function fetchAllFeeds(tab){
+  const feeds=FEEDS[tab]||[];
+  const results=await Promise.allSettled(feeds.map(f=>fetchOneFeed(f)));
+  let items=[];
+  results.forEach((r,i)=>{
+    if(r.status==='fulfilled'&&r.value.length){
+      // Tag each item with the feed URL for source extraction fallback
+      r.value.forEach(it=>{ it._feedUrl=feeds[i]; items.push(it); });
+    }
+  });
+
+  // Deduplicate by title similarity (remove near-duplicates from multiple feeds)
+  const seen=new Set();
+  items=items.filter(it=>{
+    const key=it.title.substring(0,60).toLowerCase().replace(/\s+/g,' ').trim();
+    if(seen.has(key))return false;
+    seen.add(key);
+    return true;
+  });
+
+  // Sort newest first
+  items.sort((a,b)=>parsePubDate(b.pubDate)-parsePubDate(a.pubDate));
+
+  return items;
+}
+
+// If direct feeds all fail, fall back to Google News RSS
+async function fetchGoogleNews(tab){
+  const q=GN_QUERIES[tab]||'';
+  // Encode the query string first to make a valid URL (no raw spaces/quotes).
+  // Then pass the whole gnUrl DIRECTLY as rss_url — do NOT wrap in encodeURIComponent again.
+  // rss2json requires a valid URL as rss_url; it passes it as-is to Google News.
+  const gnUrl='https://news.google.com/rss/search?q='+encodeURIComponent(q)+'&hl=en&gl=US&ceid=US:en';
+  const apiUrl='https://api.rss2json.com/v1/api.json?rss_url='+gnUrl+'&count=30'+(RSS2JSON_KEY?'&api_key='+RSS2JSON_KEY:'');
+  try{
+    const r=await fetch(apiUrl,{signal:AbortSignal.timeout(8000)});
+    const d=await r.json();
+    if(d.status==='ok'&&d.items?.length)return d.items;
+  }catch{}
+  return[];
+}
+
+function extractSource(item){
+  if(item.source&&item.source.length>1)return item.source;
+  if(item._feedUrl){
+    try{const u=new URL(item._feedUrl);return u.hostname.replace('www.','').replace('feeds.','').split('.')[0];}catch{}
+  }
+  const m=(item.title||'').match(/[–—-]\s*([^–—-]+)$/);
+  if(m)return m[1].trim();
+  return '';
+}
+
+function ageLabel(pubDate){
+  const ms=Date.now()-parsePubDate(pubDate);
+  if(ms<=0)return{text:'just now',cls:'age-fresh'};
+  const h=ms/3600000;
+  if(h<1)return{text:Math.round(ms/60000)+'m ago',cls:'age-fresh'};
+  if(h<24)return{text:Math.round(h)+'h ago',cls:'age-fresh'};
+  if(h<72)return{text:Math.round(h/24)+'d ago',cls:'age-old'};
+  return{text:Math.round(h/24)+'d ago',cls:'age-stale'};
+}
+
+function strip(h){return(h||'').replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").trim();}
+
+async function loadNews(tab){
+  const grid=document.getElementById('ng-'+tab);
+  if(!grid)return;
+
+  // Check cache
+  const now=Date.now();
+  if(CACHE[tab]&&(now-CACHE[tab].ts)<TTL){
+    renderNews(tab,CACHE[tab].items,true);
+    const ago=Math.round((now-CACHE[tab].ts)/60000);
+    const cn=document.getElementById('cn-'+tab);
+    if(cn)cn.textContent='Cached '+ago+'m ago';
+    return;
+  }
+
+  grid.innerHTML='<div class="news-loading"><span class="spin"></span>&nbsp;&nbsp;Fetching live news…</div>';
+
+  // Fetch direct RSS feeds and Google News in parallel
+  const [direct, gnItems] = await Promise.all([
+    fetchAllFeeds(tab),
+    fetchGoogleNews(tab),
+  ]);
+
+  // Merge: direct feeds first, then GN items not already seen
+  const directTitles=new Set(direct.map(i=>i.title.substring(0,60).toLowerCase().trim()));
+  const merged=[...direct];
+  gnItems.forEach(it=>{
+    const k=it.title.substring(0,60).toLowerCase().trim();
+    if(!directTitles.has(k))merged.push(it);
+  });
+
+  // Sort again after merge
+  merged.sort((a,b)=>parsePubDate(b.pubDate)-parsePubDate(a.pubDate));
+
+  // Drop anything older than 5 days, but keep at least 8 items if we'd be left with fewer
+  const maxAge=30*24*60*60*1000;
+  const fresh=merged.filter(a=>(Date.now()-parsePubDate(a.pubDate||a.isoDate))<maxAge);
+  const final=(fresh.length>=4?fresh:merged).slice(0,24);
+
+  CACHE[tab]={items:final,ts:now};
+  const cn=document.getElementById('cn-'+tab);
+  if(cn)cn.textContent='Updated '+new Intl.DateTimeFormat('en-CA',{timeZone:'America/Toronto',hour:'2-digit',minute:'2-digit',hour12:true}).format(new Date());
+
+  renderNews(tab,final,false);
+  setBrief(tab,final);
+}
+
+function renderNews(tab,items,fromCache){
+  const grid=document.getElementById('ng-'+tab);
+  if(!grid)return;
+  if(!items?.length){
+    grid.innerHTML='<div class="news-empty">No news found — try refreshing.</div>';
+    return;
+  }
+
+  grid.innerHTML=items.map(item=>{
+    const title=strip(item.title).replace(/\s*[–—-]\s*[^–—-]+$/,'');
+    const desc=strip(item.description).substring(0,200);
+    const src=extractSource(item);
+    const age=ageLabel(item.pubDate||item.isoDate);
+    const url=item.link||item.guid||'#';
+    return`<a class="news-card" href="${url}" target="_blank" rel="noopener">
+      <div class="news-src">${src||'News'}${fromCache?'':''}</div>
+      <div class="news-ttl">${title}</div>
+      ${desc?`<div class="news-desc">${desc}</div>`:''}
+      <div class="news-time">${age.text}<span class="news-age-warn ${age.cls}">${age.cls==='age-fresh'?'fresh':age.cls==='age-old'?'recent':'older'}</span></div>
+    </a>`;
+  }).join('');
+}
+
+async function refreshNews(tab){
+  delete CACHE[tab];
+  const cn=document.getElementById('cn-'+tab);
+  if(cn)cn.textContent='';
+  await loadNews(tab);
+}
+
+function setDate(tab){
+  const el=document.getElementById('bd-'+tab);
+  if(el)el.textContent=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Toronto',weekday:'long',year:'numeric',month:'long',day:'numeric'}).format(new Date());
+}
+
+function setBrief(tab,items){
+  const el=document.getElementById('bt-'+tab);if(!el)return;
+  if(!items?.length){el.className='brief-body loading';el.textContent='Unable to load. Refresh to retry.';return;}
+  // Use the 5 freshest items (already sorted newest-first)
+  el.className='brief-body';
+  el.textContent='Latest: '+items.slice(0,5).map(i=>strip(i.title).replace(/\s*[–—-]\s*[^–—-]+$/,'')).join(' · ');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TAB SWITCHING
+// ═══════════════════════════════════════════════════════════════
+const loaded=new Set();
+
+function activateTab(tab){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id==='tab-'+tab));
+  if(loaded.has(tab))return;
+  loaded.add(tab);
+  setDate(tab);
+
+  switch(tab){
+    case 'overview':    renderGrid('grid-overview',SECTORS.overview); break;
+    case 'mining':
+      renderGrid('grid-mg',SECTORS['mining-gold']);
+      renderGrid('grid-ms',SECTORS['mining-silver']);
+      renderGrid('grid-mc',SECTORS['mining-copper']);
+      renderGrid('grid-ml',SECTORS['mining-lithium']);
+      renderGrid('grid-mu',SECTORS['mining-uranium']);
+      renderGrid('grid-mo',SECTORS['mining-other']); break;
+    case 'energy':      renderGrid('grid-energy',SECTORS.energy); break;
+    case 'healthcare':  renderGrid('grid-health', SECTORS.health); break;
+    case 'technology':  renderGrid('grid-tech',   SECTORS.tech);   break;
+    case 'realestate':  renderGrid('grid-re',     SECTORS.re);     break;
+    case 'hospitality': renderGrid('grid-hosp',   SECTORS.hosp);   break;
+  }
+  loadNews(tab);
+}
+
+document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>activateTab(b.dataset.tab)));
+
+// ═══════════════════════════════════════════════════════════════
+// SOURCES PANEL
+// ═══════════════════════════════════════════════════════════════
+function toggleSrc(){
+  document.getElementById('src-toggle').classList.toggle('open');
+  document.getElementById('src-body').classList.toggle('open');
+}
+document.getElementById('src-list').innerHTML=APPROVED.map(s=>`<div class="src-tag">${s}</div>`).join('');
+
+// ═══════════════════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded',()=>{
+  makeTape();
+  activateTab('overview');
+});
+</script>
+</body>
+</html>
