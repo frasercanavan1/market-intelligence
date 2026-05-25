@@ -3,550 +3,962 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Market Intelligence · PowerOne Capital Markets</title>
+<title>PowerOne Capital Markets — Intelligence Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Instrument+Sans:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<script src="https://s3.tradingview.com/tv.js"></script>
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#09090C;--surface:#0F1117;--card:#13161F;--card-h:#171B26;
-  --b:rgba(255,255,255,0.065);--bh:rgba(212,168,67,0.3);
-  --gold:#D4A843;--gold-l:#E8C876;--gold-d:rgba(212,168,67,0.1);--gold-bd:rgba(212,168,67,0.25);
-  --t1:#EDE9E0;--t2:#8A8680;--t3:#4E4B47;
-  --up:#4ade80;--dn:#f87171;
-  --r:12px;--rs:7px;
-  --fh:'Syne',sans-serif;--fb:'Instrument Sans',sans-serif;
-}
-html{font-size:16px;scroll-behavior:smooth}
-body{background:var(--bg);color:var(--t1);font-family:var(--fb);min-height:100vh;line-height:1.6;-webkit-font-smoothing:antialiased}
-a{color:inherit;text-decoration:none}
-button{font-family:var(--fb);cursor:pointer}
-.w{max-width:1300px;margin:0 auto;padding:0 2rem}
-.top-bar{height:3px;background:linear-gradient(90deg,transparent,var(--gold) 30%,var(--gold-l) 60%,transparent)}
+  :root {
+    --bg:#09090C; --bg-2:#0F0F14; --bg-3:#141419; --bg-card:#111116;
+    --gold:#D4A843; --gold-dim:#A07C2E; --gold-border:rgba(212,168,67,0.25);
+    --text:#E8E6E0; --text-muted:#888077; --text-dim:#555248;
+    --green:#3DAA6B; --red:#D94F4F; --border:rgba(255,255,255,0.06);
+    --r:6px; --rl:10px;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  html{font-size:15px;scroll-behavior:smooth;}
+  body{background:var(--bg);color:var(--text);font-family:'Instrument Sans',sans-serif;min-height:100vh;overflow-x:hidden;}
 
-/* HEADER */
-header{background:rgba(9,9,12,0.96);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--b);position:sticky;top:0;z-index:200}
-.hdr{display:flex;align-items:center;justify-content:space-between;padding:.85rem 0;gap:1rem;flex-wrap:wrap}
-.brand-name{font-family:var(--fh);font-size:20px;font-weight:700;letter-spacing:-0.03em}
-.brand-name em{color:var(--gold);font-style:normal}
-.brand-sub{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--t3);margin-top:2px}
-.hdr-r{display:flex;align-items:center;gap:1.25rem}
-.mkt-pill{display:flex;align-items:center;gap:7px;padding:5px 12px;border-radius:99px;border:1px solid var(--b);background:rgba(255,255,255,.025)}
-.mdot{width:7px;height:7px;border-radius:50%;background:var(--up);box-shadow:0 0 7px #4ade80aa;transition:all .3s}
-.mdot.cl{background:var(--t3);box-shadow:none}
-.mlbl{font-size:11px;font-weight:500;color:var(--t2)}
-.clk{font-family:var(--fh);font-size:12px;font-weight:500;color:var(--t2);white-space:nowrap}
+  /* HEADER */
+  #site-header{position:sticky;top:0;z-index:100;background:rgba(9,9,12,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--gold-border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:56px;gap:20px;}
+  .header-logo{display:flex;align-items:center;gap:12px;flex-shrink:0;}
+  .logo-mark{width:34px;height:34px;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:14px;color:var(--bg);flex-shrink:0;}
+  .logo-text{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;letter-spacing:0.04em;text-transform:uppercase;line-height:1.2;}
+  .logo-sub{font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold-dim);}
+  .header-right{display:flex;align-items:center;gap:20px;flex-shrink:0;}
+  .mkt-ind{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);}
+  .mkt-dot{width:7px;height:7px;border-radius:50%;background:var(--text-dim);transition:background .3s;}
+  .mkt-dot.open{background:var(--green);box-shadow:0 0 6px var(--green);}
+  .mkt-dot.closed{background:var(--red);}
+  #live-clock{font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:var(--gold);letter-spacing:0.08em;}
 
-/* TRADINGVIEW TICKER */
-.ticker-bar{background:var(--surface);border-bottom:1px solid var(--b);overflow:hidden;min-height:46px}
-.tradingview-widget-container{min-height:46px;width:100%}
-.tradingview-widget-container__widget{min-height:46px}
+  /* TAPE */
+  #tape-wrap{background:var(--bg-2);border-bottom:1px solid var(--border);min-height:46px;}
 
-/* TABS */
-.tnav{background:var(--surface);border-bottom:1px solid var(--b)}
-.trow{display:flex;overflow-x:auto;scrollbar-width:none}
-.trow::-webkit-scrollbar{display:none}
-.tb{display:flex;align-items:center;gap:8px;padding:13px 22px;font-size:13px;font-weight:500;color:var(--t3);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:color .15s,border-color .15s;white-space:nowrap;outline:none}
-.tb:hover{color:var(--t2)}
-.tb.on{color:var(--gold);border-bottom-color:var(--gold)}
+  /* TAB NAV */
+  #tab-nav{display:flex;align-items:stretch;border-bottom:1px solid var(--border);background:var(--bg-2);overflow-x:auto;scrollbar-width:none;position:sticky;top:56px;z-index:90;}
+  #tab-nav::-webkit-scrollbar{display:none;}
+  .tab-btn{display:flex;align-items:center;gap:8px;padding:0 22px;height:46px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-muted);font-family:'Syne',sans-serif;font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;white-space:nowrap;transition:color .2s,border-color .2s;flex-shrink:0;}
+  .tab-btn:hover{color:var(--text);}
+  .tab-btn.active{color:var(--gold);border-bottom-color:var(--gold);}
+  .tab-btn svg{width:14px;height:14px;opacity:0.7;flex-shrink:0;}
+  .tab-btn.active svg{opacity:1;}
 
-/* MAIN */
-main{padding:2rem 0 4rem}
-.pn{display:none}.pn.on{display:block}
-.pt{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:12px}
-.ptitle{font-family:var(--fh);font-size:24px;font-weight:700;color:var(--t1);letter-spacing:-.03em}
-.ptr{display:flex;align-items:center;gap:10px}
-.lupd{font-size:12px;color:var(--t3)}
-.rfb{display:inline-flex;align-items:center;gap:7px;padding:8px 17px;background:var(--gold-d);border:1px solid var(--gold-bd);border-radius:var(--rs);color:var(--gold);font-size:13px;font-weight:500;transition:background .15s,transform .1s;outline:none}
-.rfb:hover{background:rgba(212,168,67,.18)}
-.rfb:active{transform:scale(.97)}
-.rfb:disabled{opacity:.35;cursor:not-allowed;transform:none}
-.rfb svg{width:14px;height:14px;flex-shrink:0}
-.spin{animation:sp .7s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
+  /* PANELS */
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+  .panel-inner{max-width:1400px;margin:0 auto;padding:32px 28px;}
 
-/* BRIEF */
-.brief{background:rgba(212,168,67,0.055);border:1px solid rgba(212,168,67,0.18);border-radius:var(--r);padding:1.1rem 1.4rem;margin-bottom:1.5rem}
-.brief-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem}
-.brief-lbl{font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--gold)}
-.brief-time{font-size:11px;color:var(--t3)}
-.brief-list{list-style:none;display:flex;flex-direction:column;gap:8px}
-.brief-list li{font-size:13.5px;color:var(--t1);line-height:1.45;padding-left:18px;position:relative;cursor:pointer}
-.brief-list li::before{content:'▸';position:absolute;left:0;color:var(--gold);font-size:10px;top:3px}
-.brief-list li:hover{color:var(--gold-l)}
-.bsrc{font-size:10.5px;color:var(--t3);margin-left:6px;font-style:normal}
+  /* SECTION */
+  .sec-hdr{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);}
+  .sec-title{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);}
+  .sec-meta{font-size:11px;color:var(--text-dim);letter-spacing:0.04em;}
 
-/* NEWS GRID */
-.ng{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px}
-.nc{background:var(--card);border:1px solid var(--b);border-radius:var(--r);padding:1.2rem 1.35rem;display:flex;flex-direction:column;gap:8px;transition:border-color .18s,background .18s,transform .15s;cursor:pointer;position:relative;overflow:hidden}
-.nc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--sc,var(--gold));opacity:0;transition:opacity .18s}
-.nc:hover{border-color:var(--bh);background:var(--card-h);transform:translateY(-2px)}
-.nc:hover::before{opacity:1}
-.cm{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.cs{font-size:10px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ca{font-size:11px;color:var(--t3);white-space:nowrap}
-.ct{font-family:var(--fh);font-size:15px;font-weight:600;color:var(--t1);line-height:1.42;letter-spacing:-.015em}
-.cd{font-size:13px;color:var(--t2);line-height:1.6;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;flex:1}
-.cf{padding-top:8px;border-top:1px solid var(--b);margin-top:auto}
-.rl{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;color:var(--gold);transition:color .15s}
-.rl:hover{color:var(--gold-l)}
-.rl svg{width:12px;height:12px}
+  .sub-lbl{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:var(--gold-dim);margin:28px 0 10px;display:flex;align-items:center;gap:10px;}
+  .sub-lbl::after{content:'';flex:1;height:1px;background:var(--border);}
 
-/* STATES */
-.es{display:flex;flex-direction:column;align-items:center;padding:4.5rem 2rem;gap:14px;text-align:center;color:var(--t3)}
-.es-ico{font-size:34px;opacity:.2}
-.es-h{font-family:var(--fh);font-size:16px;font-weight:600;color:var(--t2)}
-.es-p{font-size:13px;max-width:400px;line-height:1.65}
-.skg{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px}
-.skc{background:var(--card);border:1px solid var(--b);border-radius:var(--r);padding:1.2rem 1.35rem;height:185px;display:flex;flex-direction:column;gap:11px}
-.skl{border-radius:5px;background:linear-gradient(90deg,rgba(255,255,255,.04) 0%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.04) 100%);background-size:200% 100%;animation:shim 1.6s ease-in-out infinite}
-@keyframes shim{0%{background-position:200% 0}100%{background-position:-200% 0}}
-.sk-s{height:10px;width:30%}.sk-t{height:14px;width:100%}.sk-t2{height:14px;width:76%}.sk-p{height:11px;width:100%}.sk-p2{height:11px;width:86%}.sk-p3{height:11px;width:60%}
-.err{display:flex;align-items:flex-start;gap:10px;padding:13px 16px;background:rgba(163,45,45,.1);border:1px solid rgba(240,149,149,.22);border-radius:var(--rs);color:#F09595;font-size:13px;line-height:1.5}
-.err svg{width:16px;height:16px;flex-shrink:0;margin-top:1px}
+  /* PRICE GRID */
+  .price-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:8px;}
+  .price-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;display:flex;flex-direction:column;transition:border-color .2s;}
+  .price-card:hover{border-color:var(--gold-border);}
+  .tv-frame{flex:1;min-height:150px;}
+  .price-card-lbl{padding:8px 12px 10px;border-top:1px solid var(--border);display:flex;align-items:baseline;justify-content:space-between;gap:6px;}
+  .price-card-name{font-family:'Syne',sans-serif;font-size:11px;font-weight:600;color:var(--text);line-height:1.3;}
+  .price-card-ticker{font-size:10px;font-weight:600;letter-spacing:0.08em;color:var(--gold-dim);white-space:nowrap;}
 
-/* SOURCES */
-.srcsec{margin-top:3.5rem;border-top:1px solid var(--b);padding-top:1.75rem}
-.srchdr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
-.srctog{display:flex;align-items:center;gap:9px;background:none;border:none;color:var(--t3);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;transition:color .15s;outline:none}
-.srctog:hover{color:var(--t2)}
-.srctog svg{transition:transform .22s}
-.srctog.open svg.cv{transform:rotate(180deg)}
-.srcgrid{display:none;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:1.25rem}
-.srci{display:flex;align-items:center;gap:11px;padding:11px 15px;background:var(--card);border:1px solid var(--b);border-radius:var(--rs)}
-.sdot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
-.sname{font-size:13px;font-weight:500;color:var(--t1)}
-.scat{font-size:11px;color:var(--t3);margin-top:1px}
+  .private-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--rl);padding:20px 18px;display:flex;flex-direction:column;gap:6px;}
+  .private-card-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:var(--text);}
+  .private-card-badge{font-size:9.5px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);background:var(--bg-3);border:1px solid var(--border);border-radius:3px;padding:2px 7px;display:inline-block;width:fit-content;}
+  .private-card-desc{font-size:11.5px;color:var(--text-muted);line-height:1.5;}
 
-footer{border-top:1px solid var(--b);padding:1.5rem 0;margin-top:1rem}
-.ftr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
-.fl{font-size:12px;color:var(--t3)}.fl strong{color:var(--gold);font-weight:500}
-.fr{font-size:11px;color:var(--t3)}
+  /* BRIEF */
+  .brief-box{background:linear-gradient(135deg,rgba(212,168,67,0.06),rgba(212,168,67,0.02));border:1px solid var(--gold-border);border-radius:var(--rl);padding:22px 26px;margin-bottom:28px;position:relative;overflow:hidden;}
+  .brief-box::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.4;}
+  .brief-hdr{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+  .brief-lbl{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:var(--gold);}
+  .brief-date{font-size:10px;color:var(--text-dim);letter-spacing:0.06em;}
+  .brief-dot{width:5px;height:5px;border-radius:50%;background:var(--gold);opacity:.5;}
+  .brief-body{font-size:13px;line-height:1.7;color:var(--text-muted);}
+  .brief-body.loading{color:var(--text-dim);font-style:italic;}
 
-@media(max-width:768px){
-  .w{padding:0 1rem}
-  .clk,.brand-sub{display:none}
-  .ng,.skg,.srcgrid{grid-template-columns:1fr}
-  .ptitle{font-size:20px}
-}
+  /* NEWS */
+  .news-ctrl{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+  .refresh-btn{display:flex;align-items:center;gap:6px;background:none;border:1px solid var(--border);border-radius:var(--r);padding:6px 12px;color:var(--text-muted);font-family:'Instrument Sans',sans-serif;font-size:11px;cursor:pointer;transition:border-color .2s,color .2s;}
+  .refresh-btn:hover{border-color:var(--gold-border);color:var(--gold);}
+  .refresh-btn svg{width:12px;height:12px;}
+  .cache-note{font-size:10.5px;color:var(--text-dim);}
+  .news-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px;min-height:120px;}
+  .news-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;display:flex;flex-direction:column;gap:8px;transition:border-color .2s,transform .15s;text-decoration:none;cursor:pointer;}
+  .news-card:hover{border-color:var(--gold-border);transform:translateY(-1px);}
+  .news-src{font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold-dim);}
+  .news-ttl{font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:var(--text);line-height:1.4;}
+  .news-desc{font-size:11.5px;color:var(--text-muted);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .news-time{font-size:10px;color:var(--text-dim);margin-top:auto;}
+  .news-loading,.news-empty{grid-column:1/-1;display:flex;align-items:center;justify-content:center;padding:40px;color:var(--text-dim);font-size:13px;font-style:italic;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .spin{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;}
+
+  /* NEWS AGE BADGE */
+  .news-age-warn{display:inline-block;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:2px 6px;border-radius:3px;margin-left:6px;vertical-align:middle;}
+  .age-fresh{background:rgba(61,170,107,0.15);color:var(--green);}
+  .age-old{background:rgba(212,168,67,0.15);color:var(--gold);}
+  .age-stale{background:rgba(217,79,79,0.15);color:var(--red);}
+
+  /* KEY NOTICE */
+  .api-notice{background:rgba(212,168,67,0.08);border:1px solid var(--gold-border);border-radius:var(--r);padding:12px 16px;margin-bottom:20px;font-size:11.5px;color:var(--text-muted);line-height:1.6;}
+  .api-notice strong{color:var(--gold);}
+  .api-notice code{background:var(--bg-3);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:11px;color:var(--text);}
+
+  /* SOURCES */
+  #sources-panel{margin:0 28px 40px;border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;}
+  .src-toggle{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:var(--bg-2);cursor:pointer;user-select:none;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);transition:color .2s;}
+  .src-toggle:hover{color:var(--text);}
+  .src-toggle svg{width:14px;height:14px;transition:transform .2s;}
+  .src-toggle.open svg{transform:rotate(180deg);}
+  .src-body{display:none;padding:18px 20px;background:var(--bg-card);}
+  .src-body.open{display:block;}
+  .src-list{display:flex;flex-wrap:wrap;gap:6px;}
+  .src-tag{font-size:10px;padding:3px 8px;background:var(--bg-3);border:1px solid var(--border);border-radius:3px;color:var(--text-muted);}
+
+  footer{padding:24px 28px;border-top:1px solid var(--border);text-align:center;font-size:11px;color:var(--text-dim);line-height:1.6;letter-spacing:0.04em;}
+  footer strong{color:var(--gold-dim);font-weight:600;}
+
+  @media(max-width:700px){
+    .panel-inner{padding:20px 16px;}#site-header{padding:0 16px;}
+    .logo-text{display:none;}.price-grid{grid-template-columns:repeat(2,1fr);}
+    .news-grid{grid-template-columns:1fr;}
+  }
 </style>
 </head>
 <body>
 
-<div class="top-bar"></div>
-
-<header>
-  <div class="w">
-    <div class="hdr">
-      <div>
-        <div class="brand-name">Market <em>Intelligence</em></div>
-        <div class="brand-sub">PowerOne Capital Markets</div>
-      </div>
-      <div class="hdr-r">
-        <div class="mkt-pill"><div class="mdot" id="mdot"></div><span class="mlbl" id="mlbl">Markets</span></div>
-        <div class="clk" id="clk"></div>
-      </div>
-    </div>
+<header id="site-header">
+  <div class="header-logo">
+    <div class="logo-mark">P1</div>
+    <div><div class="logo-text">PowerOne Capital Markets</div><div class="logo-sub">Intelligence Dashboard</div></div>
+  </div>
+  <div class="header-right">
+    <div class="mkt-ind"><div class="mkt-dot" id="mkt-dot"></div><span id="mkt-status">Checking…</span></div>
+    <div id="live-clock">--:--:-- ET</div>
   </div>
 </header>
 
-<!-- TradingView Ticker Tape -->
-<div class="ticker-bar">
-  <div class="tradingview-widget-container">
-    <div class="tradingview-widget-container__widget"></div>
-    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
-    {
-      "symbols": [
-        {"proName": "TVC:GOLD",         "title": "Gold"},
-        {"proName": "TVC:SILVER",        "title": "Silver"},
-        {"proName": "TVC:COPPER",        "title": "Copper"},
-        {"proName": "TVC:USOIL",         "title": "WTI Oil"},
-        {"proName": "FOREXCOM:SPXUSD",   "title": "S&P 500"},
-        {"proName": "TSX:TSX",           "title": "TSX"},
-        {"proName": "FX_IDC:CADUSD",     "title": "CAD / USD"},
-        {"proName": "FX:EURUSD",         "title": "EUR / USD"},
-        {"proName": "FX:GBPUSD",         "title": "GBP / USD"},
-        {"proName": "TVC:DXY",           "title": "USD Index"},
-        {"proName": "COMEX:GC1!",        "title": "Gold Futures"},
-        {"proName": "NYMEX:CL1!",        "title": "Crude Futures"}
-      ],
-      "showSymbolLogo": false,
-      "colorTheme": "dark",
-      "isTransparent": true,
-      "displayMode": "regular",
-      "locale": "en"
-    }
-    </script>
-  </div>
-</div>
+<div id="tape-wrap"><div id="tape-inner"></div></div>
 
-<nav class="tnav">
-  <div class="w">
-    <div class="trow">
-      <button class="tb on" data-tab="gold">◈ Gold &amp; Metals</button>
-      <button class="tb" data-tab="mining">⬡ Mining</button>
-      <button class="tb" data-tab="macro">◉ Global Macro</button>
-      <button class="tb" data-tab="canada">◎ Canada</button>
-      <button class="tb" data-tab="us">◇ United States</button>
-      <button class="tb" data-tab="europe">○ Europe</button>
-    </div>
-  </div>
+<nav id="tab-nav">
+  <button class="tab-btn active" data-tab="overview">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Overview
+  </button>
+  <button class="tab-btn" data-tab="mining">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 19 2 19"/></svg>Mining
+  </button>
+  <button class="tab-btn" data-tab="energy">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>Energy
+  </button>
+  <button class="tab-btn" data-tab="healthcare">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Health Care
+  </button>
+  <button class="tab-btn" data-tab="technology">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="12" y1="17" x2="12" y2="21"/><line x1="8" y1="21" x2="16" y2="21"/></svg>Technology
+  </button>
+  <button class="tab-btn" data-tab="realestate">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Real Estate
+  </button>
+  <button class="tab-btn" data-tab="hospitality">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>Hospitality
+  </button>
 </nav>
 
-<main>
-  <div class="w">
-    <div id="panels"></div>
 
-    <div class="srcsec">
-      <div class="srchdr">
-        <button class="srctog" id="srctog" onclick="toggleSrc()">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.4"/><path d="M8 5.5v3L10 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-          Approved Sources &amp; References
-          <svg class="cv" width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-      </div>
-      <div class="srcgrid" id="srcgrid"></div>
+<!-- OVERVIEW -->
+<section class="tab-panel active" id="tab-overview">
+  <div class="panel-inner">
+    <div class="sec-hdr"><span class="sec-title">Macro Instruments — Live Prices</span><span class="sec-meta">Real-time via TradingView</span></div>
+    <div class="price-grid" id="grid-overview"></div>
+    <div class="brief-box" style="margin-top:32px">
+      <div class="brief-hdr"><span class="brief-lbl">Today's Brief</span><div class="brief-dot"></div><span class="brief-date" id="bd-overview"></span></div>
+      <div class="brief-body loading" id="bt-overview">Loading market summary…</div>
     </div>
+    <div class="sec-hdr"><span class="sec-title">Global Macro News</span>
+      <div class="news-ctrl">
+        <button class="refresh-btn" onclick="refreshNews('overview')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Refresh</button>
+        <span class="cache-note" id="cn-overview"></span>
+      </div>
+    </div>
+    <div class="news-grid" id="ng-overview"><div class="news-loading"><span class="spin"></span>&nbsp;&nbsp;Loading…</div></div>
   </div>
-</main>
+</section>
+
+<!-- MINING -->
+<section class="tab-panel" id="tab-mining">
+  <div class="panel-inner">
+    <div class="sec-hdr"><span class="sec-title">Mining Portfolio — Live Prices</span></div>
+    <div class="sub-lbl">Gold</div>           <div class="price-grid" id="grid-mg"></div>
+    <div class="sub-lbl">Silver</div>         <div class="price-grid" id="grid-ms"></div>
+    <div class="sub-lbl">Copper</div>         <div class="price-grid" id="grid-mc"></div>
+    <div class="sub-lbl">Lithium</div>        <div class="price-grid" id="grid-ml"></div>
+    <div class="sub-lbl">Uranium</div>        <div class="price-grid" id="grid-mu"></div>
+    <div class="sub-lbl">Diversified &amp; Other</div><div class="price-grid" id="grid-mo"></div>
+    <div class="brief-box" style="margin-top:36px">
+      <div class="brief-hdr"><span class="brief-lbl">Today's Brief — Mining &amp; Resources</span><div class="brief-dot"></div><span class="brief-date" id="bd-mining"></span></div>
+      <div class="brief-body loading" id="bt-mining">Loading…</div>
+    </div>
+    <div class="sec-hdr"><span class="sec-title">Mining &amp; Resources News</span>
+      <div class="news-ctrl"><button class="refresh-btn" onclick="refreshNews('mining')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Refresh</button><span class="cache-note" id="cn-mining"></span></div>
+    </div>
+    <div class="news-grid" id="ng-mining"><div class="news-loading"><span class="spin"></span>&nbsp;&nbsp;Loading…</div></div>
+  </div>
+</section>
+
+<!-- ENERGY -->
+<section class="tab-panel" id="tab-energy">
+  <div class="panel-inner">
+    <div class="sec-hdr"><span class="sec-title">Energy &amp; Cleantech — Live Prices</span></div>
+    <div class="price-grid" id="grid-energy"></div>
+    <div class="brief-box" style="margin-top:36px">
+      <div class="brief-hdr"><span class="brief-lbl">Today's Brief — Energy &amp; Cleantech</span><div class="brief-dot"></div><span class="brief-date" id="bd-energy"></span></div>
+      <div class="brief-body loading" id="bt-energy">Loading…</div>
+    </div>
+    <div class="sec-hdr"><span class="sec-title">Energy &amp; Cleantech News</span>
+      <div class="news-ctrl"><button class="refresh-btn" onclick="refreshNews('energy')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Refresh</button><span class="cache-note" id="cn-energy"></span></div>
+    </div>
+    <div class="news-grid" id="ng-energy"><div class="news-loading"><span class="spin"></span>&nbsp;&nbsp;Loading…</div></div>
+  </div>
+</section>
+
+<!-- HEALTHCARE -->
+<section class="tab-panel" id="tab-healthcare">
+  <div class="panel-inner">
+    <div class="sec-hdr"><span class="sec-title">Health &amp; Life Sciences — Live Prices</span></div>
+    <div class="price-grid" id="grid-health"></div>
+    <div class="brief-box" style="margin-top:36px">
+      <div class="brief-hdr"><span class="brief-lbl">Today's Brief — Health &amp; Life Sciences</span><div class="brief-dot"></div><span class="brief-date" id="bd-healthcare"></span></div>
+      <div class="brief-body loading" id="bt-healthcare">Loading…</div>
+    </div>
+    <div class="sec-hdr"><span class="sec-title">Health &amp; Life Sciences News</span>
+      <div class="news-ctrl"><button class="refresh-btn" onclick="refreshNews('healthcare')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Refresh</button><span class="cache-note" id="cn-healthcare"></span></div>
+    </div>
+    <div class="news-grid" id="ng-healthcare"><div class="news-loading"><span class="spin"></span>&nbsp;&nbsp;Loading…</div></div>
+  </div>
+</section>
+
+<!-- TECHNOLOGY -->
+<section class="tab-panel" id="tab-technology">
+  <div class="panel-inner">
+    <div class="sec-hdr"><span class="sec-title">Technology — Live Prices</span></div>
+    <div class="price-grid" id="grid-tech"></div>
+    <div class="brief-box" style="margin-top:36px">
+      <div class="brief-hdr"><span class="brief-lbl">Today's Brief — Technology</span><div class="brief-dot"></div><span class="brief-date" id="bd-technology"></span></div>
+      <div class="brief-body loading" id="bt-technology">Loading…</div>
+    </div>
+    <div class="sec-hdr"><span class="sec-title">Technology News</span>
+      <div class="news-ctrl"><button class="refresh-btn" onclick="refreshNews('technology')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Refresh</button><span class="cache-note" id="cn-technology"></span></div>
+    </div>
+    <div class="news-grid" id="ng-technology"><div class="news-loading"><span class="spin"></span>&nbsp;&nbsp;Loading…</div></div>
+  </div>
+</section>
+
+<!-- REAL ESTATE -->
+<section class="tab-panel" id="tab-realestate">
+  <div class="panel-inner">
+    <div class="sec-hdr"><span class="sec-title">Real Estate — Live Prices</span></div>
+    <div class="price-grid" id="grid-re"></div>
+    <div class="brief-box" style="margin-top:36px">
+      <div class="brief-hdr"><span class="brief-lbl">Today's Brief — Real Estate</span><div class="brief-dot"></div><span class="brief-date" id="bd-realestate"></span></div>
+      <div class="brief-body loading" id="bt-realestate">Loading…</div>
+    </div>
+    <div class="sec-hdr"><span class="sec-title">Real Estate News</span>
+      <div class="news-ctrl"><button class="refresh-btn" onclick="refreshNews('realestate')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Refresh</button><span class="cache-note" id="cn-realestate"></span></div>
+    </div>
+    <div class="news-grid" id="ng-realestate"><div class="news-loading"><span class="spin"></span>&nbsp;&nbsp;Loading…</div></div>
+  </div>
+</section>
+
+<!-- HOSPITALITY -->
+<section class="tab-panel" id="tab-hospitality">
+  <div class="panel-inner">
+    <div class="sec-hdr"><span class="sec-title">Hospitality &amp; Lifestyle</span><span class="sec-meta">Private holdings — not listed</span></div>
+    <div class="price-grid" id="grid-hosp"></div>
+    <div class="brief-box" style="margin-top:36px">
+      <div class="brief-hdr"><span class="brief-lbl">Today's Brief — Hospitality &amp; Lifestyle</span><div class="brief-dot"></div><span class="brief-date" id="bd-hospitality"></span></div>
+      <div class="brief-body loading" id="bt-hospitality">Loading…</div>
+    </div>
+    <div class="sec-hdr"><span class="sec-title">Hospitality &amp; Lifestyle News</span>
+      <div class="news-ctrl"><button class="refresh-btn" onclick="refreshNews('hospitality')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Refresh</button><span class="cache-note" id="cn-hospitality"></span></div>
+    </div>
+    <div class="news-grid" id="ng-hospitality"><div class="news-loading"><span class="spin"></span>&nbsp;&nbsp;Loading…</div></div>
+  </div>
+</section>
+
+<div id="sources-panel">
+  <div class="src-toggle" id="src-toggle" onclick="toggleSrc()">
+    <span>Approved News Sources</span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+  </div>
+  <div class="src-body" id="src-body"><div class="src-list" id="src-list"></div></div>
+</div>
 
 <footer>
-  <div class="w">
-    <div class="ftr">
-      <div class="fl">Market Intelligence — <strong>PowerOne Capital Markets</strong></div>
-      <div class="fr">Ticker: TradingView · News: Google News (Reuters, Bloomberg, BBC, FT &amp; more)</div>
-    </div>
-  </div>
+  <strong>PowerOne Capital Markets</strong> · Market Intelligence Dashboard · For internal use only<br>
+  Data sourced from Google News RSS &amp; TradingView. Not investment advice.
 </footer>
 
+
 <script>
-// ─── CONFIG ───────────────────────────────────────────────────────────────────
-const TABS = [
-  {
-    id:'gold',   name:'Gold & Metals', color:'#D4A843',
-    query:'gold price silver platinum precious metals commodities', region:'US'
-  },
-  {
-    id:'mining', name:'Mining',        color:'#4CAF50',
-    query:'gold mining copper mine mineral exploration junior miner', region:'US'
-  },
-  {
-    id:'macro',  name:'Global Macro',  color:'#9B7FD4',
-    query:'interest rates inflation central bank Federal Reserve monetary policy', region:'US'
-  },
-  {
-    id:'canada', name:'Canada',        color:'#E05C5C',
-    query:'Canada economy Bank of Canada TSX Canadian dollar markets', region:'US'
-  },
-  {
-    id:'us',     name:'United States', color:'#5B9BD5',
-    query:'Wall Street Federal Reserve US economy stocks S&P 500', region:'US'
-  },
-  {
-    id:'europe', name:'Europe',        color:'#6EC6A0',
-    query:'ECB European Central Bank eurozone European economy', region:'GB'
-  }
-];
 
-const TTL   = 15 * 60 * 1000;
-const cache = {};
+// ═══════════════════════════════════════════════════════════════
+// PORTFOLIO DATA
+// TradingView symbol format: EXCHANGE:TICKER
+// .TO → TSX  .V → TSXV  .CN → CSE  .NE → NEO
+// ═══════════════════════════════════════════════════════════════
+const SECTORS = {
+  // Macro overview — use TVC (TradingView Indices) where supported,
+  // TSX/NASDAQ/COMEX for futures, OANDA for FX
+  overview: [
+    { name:'Gold',          symbol:'OANDA:XAUUSD',  label:'XAUUSD' },
+    { name:'Silver',        symbol:'OANDA:XAGUSD',  label:'XAGUSD' },
+    { name:'Platinum',      symbol:'OANDA:XPTUSD',  label:'XPTUSD' },
+    { name:'Copper',        symbol:'COMEX:HG1!',    label:'HG1! · COMEX' },
+    { name:'WTI Crude',     symbol:'NYMEX:CL1!',    label:'CL1! · NYMEX' },
+    { name:'S&P 500',       symbol:'TVC:SPX',       label:'SPX · TVC' },
+    { name:'Dow Jones',     symbol:'TVC:DJI',       label:'DJI · TVC' },
+    { name:'Nasdaq',        symbol:'NASDAQ:IXIC',   label:'IXIC · NASDAQ' },
+    { name:'S&P/TSX Comp.', symbol:'TSX:TSX',       label:'TSX · TSX' },
+    { name:'CSE Composite', symbol:'CSE:CSECOMX',   label:'CSECOMX · CSE' },
+    { name:'USD / CAD',     symbol:'OANDA:USDCAD',  label:'USDCAD · OANDA' },
+  ],
 
-// CORS proxies — tried in order, first success wins
-const PROXIES = [
-  u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
-  u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
-  u => `https://thingproxy.freeboard.io/fetch/${u}`,
-];
+  // MINING ────────────────────────────────────────────────────
+  'mining-gold': [
+    { name:'White Gold Corp.',         symbol:'TSXV:WGO',  label:'WGO.V' },
+    { name:'Big Ridge Gold Corp.',     symbol:'TSXV:BRAU', label:'BRAU.V' },
+    { name:'Canterra Minerals Corp.',  symbol:'TSXV:CTM',  label:'CTM.V' },
+    { name:'Conquest Resources Ltd.',  symbol:'TSXV:CQR',  label:'CQR.V' },
+    { name:'Fokus Mining Corp.',       symbol:'TSXV:FKM',  label:'FKM.V' },
+    { name:'Great Pacific Gold Corp',  symbol:'TSXV:GPAC', label:'GPAC.V' },
+    { name:'Halcones Precious Metals', symbol:'TSXV:HPM',  label:'HPM.V' },
+    { name:'Green Shift Commodities',  symbol:'TSXV:GCOM', label:'GCOM.V' },
+    { name:'Rhyolite Resources Ltd.',  symbol:'TSXV:RYE',  label:'RYE.V' },
+    { name:'Rio2 Limited',             symbol:'TSX:RIO',   label:'RIO.TO' },
+  ],
+  'mining-silver': [
+    { name:'Silver Storm Mining Ltd.', symbol:'TSXV:SVRS', label:'SVRS.V' },
+    { name:'Lucky Minerals Inc.',      symbol:'TSXV:LKY',  label:'LKY.V' },
+  ],
+  'mining-copper': [
+    { name:'Adyton Resources Corp.',   symbol:'TSXV:ADY',  label:'ADY.V' },
+    { name:'Koryx Copper Inc.',        symbol:'TSXV:KRY',  label:'KRY.V' },
+    { name:'Ev Nickel Inc.',           symbol:'TSXV:EVNI', label:'EVNI.V' },
+  ],
+  'mining-lithium': [
+    { name:'Laramide Resources Ltd.',  symbol:'TSX:LAM',   label:'LAM.TO' },
+    { name:'Lithium Ionic Corp.',      symbol:'TSXV:LTH',  label:'LTH.V' },
+    { name:'Full Circle Lithium Corp.',symbol:'TSXV:FCLI', label:'FCLI.V' },
+    { name:'Champion Elec. Metals',    symbol:'CSE:LTHM',  label:'LTHM.CN' },
+  ],
+  'mining-uranium': [
+    // Urano Energy removed — confirmed not findable on TradingView
+    { name:'NeoTerrex Minerals Inc.',  symbol:'TSXV:NTX',  label:'NTX.V' },
+  ],
+  'mining-other': [
+    { name:'Collective Mining Ltd.',   symbol:'TSX:CNL',   label:'CNL.TO' },
+    { name:'BC Moly Ltd.',             symbol:'TSXV:BM',   label:'BM.V' },
+    // Ceylon Graphite — listed as CCY on TradingView
+    { name:'Ceylon Graphite',          symbol:'TSXV:CCY',  label:'CCY.V' },
+    { name:'HydroGraph Clean Power',   symbol:'CSE:HG',    label:'HG.CN' },
+    { name:'Greenland Resources Inc.', symbol:'NEO:MOLY',  label:'MOLY.NE' },
+    { name:'Miata Metals Corp.',       symbol:'CSE:MMET',  label:'MMET.CN' },
+    { name:'Nevada Lithium Resources', symbol:'CSE:NVLH',  label:'NVLH.CN' },
+    { name:'Rok Resources',            symbol:'TSXV:ROK',  label:'ROK.V' },
+    { name:'RUA Gold Inc.',            symbol:'CSE:RUA',   label:'RUA.CN' },
+  ],
 
-// Source quality whitelist — only these publishers are shown
-const WHITELIST = [
-  'reuters','bloomberg','bbc','bbc news','financial times','ft',
-  'cnbc','marketwatch','wall street journal','wsj','barron',
-  'financial post','globe and mail','bnn bloomberg','cbc',
-  'mining.com','kitco','northern miner','the northern miner',
-  'the guardian','guardian','associated press','ap news',
-  'the economist','economist','fortune','forbes',
-  'new york times','nyt','washington post','axios',
-  'south china morning post','nikkei','les echos','handelsblatt',
-  's&p global','platts','seeking alpha','motley fool',
-  'proactive investors','stockwatch','junior mining network',
-];
+  // ENERGY ───────────────────────────────────────────────────
+  energy: [
+    { name:'enCore Energy Corp.',           symbol:'TSXV:EU',   label:'EU.V' },
+    // Nuclear Fuels removed — confirmed not on TradingView
+    { name:'NG Energy International Corp.', symbol:'TSXV:GASX', label:'GASX.V' },
+    { name:'CVW Cleantech Inc.',            symbol:'TSXV:CVW',  label:'CVW.V' },
+    { name:'Base Carbon Inc.',              symbol:'NEO:BCBN',  label:'BCBN.NE' },
+    { name:'Regenera Insights',             symbol:'CSE:RGEN',  label:'RGEN.CN' },
+    { name:'Maritime Launch Services',      symbol:'NEO:MAXQ',  label:'MAXQ.NE' },
+  ],
 
-function isReputable(src) {
-  if (!src) return false;
-  const s = src.toLowerCase();
-  return WHITELIST.some(w => s.includes(w));
-}
+  // HEALTHCARE ───────────────────────────────────────────────
+  health: [
+    { name:'Aurora Spine Corp.',           symbol:'TSXV:ASG',  label:'ASG.V' },
+    { name:'Blueberries Medical Corp.',    symbol:'CSE:BBM',   label:'BBM.CN' },
+    { name:'Defence Therapeutics',         symbol:'CSE:DTC',   label:'DTC.CN' },
+    { name:'Medipharm Labs',               symbol:'TSXV:LABS', label:'LABS.V' },
+    { name:'Comprehensive Health Systems', symbol:'TSXV:CHS',  label:'CHS.V' },
+    // Nova Mentis renamed → Restart Life Sciences (HEAL)
+    { name:'Restart Life Sciences',        symbol:'CSE:HEAL',  label:'HEAL.CN' },
+    { name:'NuGen Medical Devices Inc.',   symbol:'TSXV:NGMD', label:'NGMD.V' },
+    // Safe Supply removed — confirmed not on TradingView
+    { name:'RealBotix Corp.',              symbol:'TSXV:XBOT', label:'XBOT.V' },
+  ],
 
-// Source accent colors
-const SRC_CLR = {
-  reuters:'#FF6B35', bloomberg:'#1967D2', bbc:'#BB1919', 'financial times':'#E8B882',
-  ft:'#E8B882', cnbc:'#0097D4', marketwatch:'#00AC4F', 'wall street journal':'#888',
-  wsj:'#888', 'financial post':'#E31837', 'globe and mail':'#0073CF',
-  'bnn bloomberg':'#1967D2', cbc:'#D4373C', 'mining.com':'#4CAF50',
-  kitco:'#D4A843', 'northern miner':'#8B6914', guardian:'#052962',
-  economist:'#E3120B', 'associated press':'#5B9BD5', 'ap news':'#5B9BD5',
-  'south china morning post':'#BE1622', nikkei:'#E60012',
+  // TECHNOLOGY ───────────────────────────────────────────────
+  tech: [
+    { name:'WonderFi Technologies Inc.',  symbol:'TSX:WNDR',  label:'WNDR.TO' },
+    { name:'Intouch Insight Ltd.',        symbol:'TSXV:INX',  label:'INX.V' },
+    { name:'FRNT Financial Inc.',         symbol:'TSXV:FRNT', label:'FRNT.V' },
+    // Simply Better Brands removed — acquired
+    { name:'Cult Food Science Corp.',     symbol:'CSE:CULT',  label:'CULT.CN' },
+  ],
+
+  // REAL ESTATE ──────────────────────────────────────────────
+  re: [
+    { name:'Firm Capital',                symbol:'TSX:FC',     label:'FC.TO' },
+    { name:'Superior Plus Corp.',         symbol:'TSX:SPB',    label:'SPB.TO' },
+  ],
+  hosp: [
+    { name:'Forno Cultura',    desc:'Artisanal Italian bakery & café group, Toronto.' },
+    { name:'STK Toronto',      desc:'Upscale steakhouse, King West Toronto. Premium dining and private events.' },
+    { name:'Villa Le Calvane', desc:'Tuscan wine estate & agriturismo, Montespertoli, Firenze, Italy.' },
+    { name:'La Terrazza',      desc:'Italian fine dining & event venue, Toronto. Private club and hospitality.' },
+  ],
 };
-function srcClr(n) {
-  if (!n) return '#D4A843';
-  const s = n.toLowerCase();
-  for (const [k,v] of Object.entries(SRC_CLR)) { if (s.includes(k)) return v; }
-  return '#8A8680';
+
+// ═══════════════════════════════════════════════════════════════
+// NEWS — Google News RSS via AllOrigins (no intermediate cache)
+//
+// Why this works better than before:
+//  • AllOrigins fetches the URL live on every request — no hours-old cache
+//  • Google News RSS itself is updated every few minutes
+//  • We append a cache-busting timestamp so AllOrigins never serves stale
+//  • We sort all results by pubDate and show the age of every article
+//  • We try two AllOrigins endpoints (win + herokuapp) for redundancy
+//
+// Why you still won't see Bloomberg/Reuters bylines:
+//  Google News shows the headline and links to the article, but the
+//  "source" field is the outlet name — so you WILL see "Bloomberg",
+//  "Reuters", "Financial Post" etc. as the credited source even though
+//  the content comes through Google's aggregator. That's the best
+//  possible result without paying for direct API access.
+// ═══════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════
+// MARKETAUX CONFIG
+// Free tier: 100 requests/day, 3 articles per response.
+// Get your token at https://www.marketaux.com → Dashboard
+// ═══════════════════════════════════════════════════════════════
+const MARKETAUX_TOKEN = 'lkiuaqk2RUn4MEAulWrQP4z2PqPUmbf7L62SnEJs';   // ← paste your API token
+
+// Industry filter per tab — Marketaux uses Yahoo Finance industry taxonomy
+const MARKETAUX_INDUSTRIES = {
+  overview:    'Financial Services,Energy,Basic Materials',
+  mining:      'Basic Materials',
+  energy:      'Energy',
+  healthcare:  'Healthcare',
+  technology:  'Technology',
+  realestate:  'Real Estate',
+  hospitality: 'Consumer Cyclical',
+};
+
+// Search terms per tab — used as a secondary filter
+const MARKETAUX_SEARCH = {
+  overview:    'TSX OR Canada OR commodities',
+  mining:      'mining OR gold OR silver OR copper OR lithium OR uranium',
+  energy:      'oil OR gas OR cleantech OR renewable OR uranium',
+  healthcare:  'biotech OR pharma OR healthcare',
+  technology:  'fintech OR AI OR software OR technology',
+  realestate:  'REIT OR property OR real estate',
+  hospitality: 'restaurant OR hospitality OR luxury',
+};
+
+// Google News RSS search queries — fallback when Marketaux quota exhausted
+const GN_QUERIES = {
+  overview:    'TSX gold silver copper commodities Canada economy "financial post" OR "globe and mail" OR "BNN" OR reuters',
+  mining:      'mining gold silver copper lithium uranium "junior mining" TSX Canada',
+  energy:      'energy "oil gas" cleantech Canada LNG Alberta renewable "clean energy"',
+  healthcare:  'healthcare biotech pharma "life sciences" Canada TSX "health sciences"',
+  technology:  'technology fintech "artificial intelligence" software Canada TSX startup',
+  realestate:  '"real estate" REIT Canada commercial residential property market',
+  hospitality: 'hospitality restaurant "food and beverage" luxury Canada lifestyle',
+};
+
+// Source display names — maps domain fragments to clean names
+const SOURCE_NAMES = {
+  'reuters':       'Reuters',
+  'bloomberg':     'Bloomberg',
+  'bnnbloomberg':  'BNN Bloomberg',
+  'financialpost': 'Financial Post',
+  'theglobeandmail':'Globe and Mail',
+  'globeandmail':  'Globe and Mail',
+  'cbc':           'CBC News',
+  'mining.com':    'Mining.com',
+  'miningcom':     'Mining.com',
+  'kitco':         'Kitco',
+  'northernminer': 'Northern Miner',
+  'marketwatch':   'MarketWatch',
+  'wsj':           'Wall Street Journal',
+  'ft.com':        'Financial Times',
+  'economist':     'The Economist',
+  'theglobeandmail':'Globe & Mail',
+  'newswire':      'Newswire Canada',
+  'globenewswire': 'GlobeNewswire',
+  'stockhouse':    'Stockhouse',
+  'proactiveinvestors':'Proactive Investors',
+  'investingnews': 'Investing News',
+  'thelogic':      'The Logic',
+};
+
+// In-memory cache — 15 minutes; protects the Marketaux daily quota
+const CACHE = {}, CACHE_MS = 15 * 60 * 1000;
+
+function gnRssUrl(tab) {
+  const q = GN_QUERIES[tab] || tab;
+  return 'https://news.google.com/rss/search?q='
+    + encodeURIComponent(q)
+    + '&hl=en-CA&gl=CA&ceid=CA:en&num=40';
 }
 
-// ─── CLOCK ────────────────────────────────────────────────────────────────────
-function tick() {
+// Two AllOrigins endpoints — race them, take whichever responds first
+function aoUrl1(url) {
+  // Cache-bust with minute-level timestamp so AllOrigins fetches live
+  const bust = Math.floor(Date.now() / 60000);
+  return 'https://api.allorigins.win/get?url=' + encodeURIComponent(url + '&_cb=' + bust);
+}
+function aoUrl2(url) {
+  const bust = Math.floor(Date.now() / 60000);
+  return 'https://allorigins.hexlet.app/get?url=' + encodeURIComponent(url + '&_cb=' + bust);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MARKETAUX FETCHER
+// Free tier returns 3 articles per call. We make 2-3 calls per tab
+// with different filters (date ranges + industries) and merge results.
+// Marketaux supports CORS natively — no proxy needed.
+// ═══════════════════════════════════════════════════════════════
+async function fetchMarketaux(tab) {
+  if (!MARKETAUX_TOKEN || MARKETAUX_TOKEN === 'PASTE_YOUR_TOKEN_HERE') {
+    return [];   // no token configured — skip
+  }
+
+  const industries = MARKETAUX_INDUSTRIES[tab] || '';
+  const search     = MARKETAUX_SEARCH[tab] || '';
+
+  // Build the call params
+  const baseParams = new URLSearchParams({
+    api_token: MARKETAUX_TOKEN,
+    language: 'en',
+    countries: 'ca,us',
+    filter_entities: 'true',
+    limit: '3',                                // free-tier max per call
+    published_after: yesterdayIso(),           // only last 24h for freshness
+  });
+  if (industries) baseParams.set('industries', industries);
+
+  // Make two parallel calls — one general, one keyword-filtered — for variety
+  const urls = [
+    `https://api.marketaux.com/v1/news/all?${baseParams.toString()}`,
+    `https://api.marketaux.com/v1/news/all?${baseParams.toString()}&search=${encodeURIComponent(search)}`,
+  ];
+
+  const results = await Promise.allSettled(urls.map(u =>
+    fetch(u).then(r => {
+      if (!r.ok) throw new Error('marketaux ' + r.status);
+      return r.json();
+    })
+  ));
+
+  const items = [];
+  results.forEach(r => {
+    if (r.status === 'fulfilled' && r.value?.data?.length) {
+      r.value.data.forEach(article => {
+        items.push({
+          title:       article.title || '',
+          link:        article.url || '',
+          description: (article.description || article.snippet || '').substring(0, 220),
+          pubDate:     article.published_at || '',
+          source:      article.source || extractSourceFromUrl(article.url),
+          _origin:     'marketaux',
+        });
+      });
+    }
+  });
+
+  // Deduplicate by URL
+  const seen = new Set();
+  return items.filter(i => {
+    if (seen.has(i.link)) return false;
+    seen.add(i.link);
+    return true;
+  });
+}
+
+function yesterdayIso() {
+  const d = new Date(Date.now() - 24 * 3600 * 1000);
+  return d.toISOString().split('.')[0];   // YYYY-MM-DDTHH:MM:SS
+}
+
+function extractSourceFromUrl(url) {
+  if (!url) return '';
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, '');
+    return host.split('.')[0];
+  } catch { return ''; }
+}
+
+function parseGNXml(xml) {
+  // Google News RSS item format:
+  //   <title>Headline - Source Name</title>
+  //   <link>https://...</link>
+  //   <pubDate>Mon, 01 Jan 2024 12:00:00 GMT</pubDate>
+  //   <source url="...">Source Name</source>
+  const items = Array.from(xml.querySelectorAll('item'));
+  return items.map(el => {
+    const rawTitle  = el.querySelector('title')?.textContent  || '';
+    const link      = el.querySelector('link')?.textContent   || '';
+    const pubDate   = el.querySelector('pubDate')?.textContent|| '';
+    const srcEl     = el.querySelector('source');
+    const srcName   = srcEl ? srcEl.textContent.trim() : '';
+    const desc      = el.querySelector('description')?.textContent || '';
+
+    // GN titles come as "Headline - Source Name" — split off the source suffix
+    const dashIdx = rawTitle.lastIndexOf(' - ');
+    const title   = dashIdx > 0 ? rawTitle.substring(0, dashIdx).trim() : rawTitle.trim();
+    const srcSuffix = dashIdx > 0 ? rawTitle.substring(dashIdx + 3).trim() : '';
+
+    return {
+      title,
+      link,
+      pubDate,
+      description: strip(desc).substring(0, 220),
+      source: srcName || srcSuffix,
+    };
+  });
+}
+
+async function fetchWithFallback(rssUrl) {
+  const controllers = [new AbortController(), new AbortController()];
+  const timeout = ms => new Promise((_, rej) => setTimeout(() => rej('timeout'), ms));
+
+  const tryFetch = async (proxyUrl, ctrl) => {
+    const r = await Promise.race([
+      fetch(proxyUrl, { signal: ctrl.signal }),
+      timeout(9000),
+    ]);
+    const data = await r.json();
+    if (!data.contents) throw new Error('no contents');
+    const xml = new DOMParser().parseFromString(data.contents, 'text/xml');
+    const items = parseGNXml(xml);
+    if (!items.length) throw new Error('no items');
+    return items;
+  };
+
+  // Try both proxy endpoints simultaneously; whichever returns valid data first wins
+  try {
+    const result = await Promise.any([
+      tryFetch(aoUrl1(rssUrl), controllers[0]),
+      tryFetch(aoUrl2(rssUrl), controllers[1]),
+    ]);
+    // Cancel the slower one
+    controllers.forEach(c => { try { c.abort(); } catch {} });
+    return result;
+  } catch {
+    return [];
+  }
+}
+
+function parsePubDate(str) {
+  if (!str) return 0;
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? 0 : d.getTime();
+}
+
+function ageLabel(pubDate) {
+  const ms = Date.now() - parsePubDate(pubDate);
+  if (ms <= 0) return { text: 'just now', cls: 'age-fresh' };
+  const h = ms / 3600000;
+  if (h < 1)  return { text: Math.round(ms / 60000) + 'm ago',  cls: 'age-fresh' };
+  if (h < 6)  return { text: Math.round(h) + 'h ago',           cls: 'age-fresh' };
+  if (h < 48) return { text: Math.round(h) + 'h ago',           cls: 'age-old' };
+  return       { text: Math.round(h / 24) + 'd ago',            cls: 'age-stale' };
+}
+
+function cleanSource(raw) {
+  if (!raw) return '';
+  const lower = raw.toLowerCase().replace(/\s/g, '');
+  for (const [key, val] of Object.entries(SOURCE_NAMES)) {
+    if (lower.includes(key.toLowerCase().replace(/\s/g, ''))) return val;
+  }
+  // Return as-is but trimmed if no match (e.g. "The Northern Miner")
+  return raw.trim();
+}
+
+function strip(h) {
+  return (h || '').replace(/<[^>]+>/g, '')
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
+}
+
+async function loadNews(tab) {
+  const grid = document.getElementById('ng-' + tab);
+  if (!grid) return;
+
+  const now = Date.now();
+  if (CACHE[tab] && (now - CACHE[tab].ts) < CACHE_MS) {
+    renderNews(tab, CACHE[tab].items);
+    const el = document.getElementById('cn-' + tab);
+    if (el) el.textContent = 'Cached · updated ' + CACHE[tab].timeStr;
+    setBrief(tab, CACHE[tab].items);
+    return;
+  }
+
+  grid.innerHTML = '<div class="news-loading"><span class="spin"></span>&nbsp;&nbsp;Fetching live news…</div>';
+
+  // Run both sources in parallel — Marketaux for quality, Google News for volume
+  const [marketauxItems, googleItems] = await Promise.all([
+    fetchMarketaux(tab).catch(() => []),
+    fetchWithFallback(gnRssUrl(tab)).catch(() => []),
+  ]);
+
+  // Tag origins for sort-priority later
+  marketauxItems.forEach(i => i._origin = 'marketaux');
+  googleItems.forEach(i => i._origin = 'google');
+
+  // Merge — Marketaux items first (higher quality), then Google fills the grid
+  let items = [...marketauxItems, ...googleItems];
+
+  // Deduplicate by title fingerprint
+  const seen = new Set();
+  items = items.filter(i => {
+    const key = (i.title || '').substring(0, 60).toLowerCase().replace(/\s+/g, ' ').trim();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  // Sort newest-first
+  items.sort((a, b) => parsePubDate(b.pubDate) - parsePubDate(a.pubDate));
+
+  const timeStr = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Toronto', hour: '2-digit', minute: '2-digit', hour12: true
+  }).format(new Date());
+
+  if (items.length) {
+    CACHE[tab] = { items, ts: now, timeStr };
+    const el = document.getElementById('cn-' + tab);
+    if (el) {
+      const mxCount = marketauxItems.length;
+      const gnCount = items.length - mxCount;
+      el.textContent = `Updated ${timeStr} · ${mxCount} Marketaux + ${gnCount} Google News`;
+    }
+  }
+
+  renderNews(tab, items);
+  setBrief(tab, items);
+}
+
+function renderNews(tab, items) {
+  const grid = document.getElementById('ng-' + tab);
+  if (!grid) return;
+  if (!items || !items.length) {
+    grid.innerHTML = '<div class="news-empty">No news found — try refreshing in a moment.</div>';
+    return;
+  }
+  grid.innerHTML = items.slice(0, 24).map(item => {
+    const age = ageLabel(item.pubDate);
+    const src = cleanSource(item.source);
+    const mxBadge = item._origin === 'marketaux'
+      ? '<span style="font-size:8.5px;font-weight:700;letter-spacing:0.1em;padding:1px 5px;border-radius:2px;background:rgba(212,168,67,0.18);color:var(--gold);margin-left:6px;vertical-align:middle;">PREMIUM</span>'
+      : '';
+    return `<a class="news-card" href="${item.link || '#'}" target="_blank" rel="noopener">
+      <div class="news-src">${src || 'News'}${mxBadge}</div>
+      <div class="news-ttl">${item.title}</div>
+      ${item.description ? `<div class="news-desc">${item.description}</div>` : ''}
+      <div class="news-time">${age.text} <span class="news-age-warn ${age.cls}">${age.cls === 'age-fresh' ? 'fresh' : age.cls === 'age-old' ? 'recent' : 'older'}</span></div>
+    </a>`;
+  }).join('');
+}
+
+async function refreshNews(tab) {
+  delete CACHE[tab];
+  const el = document.getElementById('cn-' + tab);
+  if (el) el.textContent = '';
+  await loadNews(tab);
+}
+
+function setDate(tab) {
+  const el = document.getElementById('bd-' + tab);
+  if (el) el.textContent = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Toronto', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  }).format(new Date());
+}
+
+function setBrief(tab, items) {
+  const el = document.getElementById('bt-' + tab);
+  if (!el) return;
+  if (!items || !items.length) {
+    el.className = 'brief-body loading';
+    el.textContent = 'Unable to load news. Check connection and refresh.';
+    return;
+  }
+  el.className = 'brief-body';
+  el.textContent = 'Latest: ' + items.slice(0, 5).map(i => i.title).join(' · ');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CLOCK
+// ═══════════════════════════════════════════════════════════════
+function updateClock() {
   const now = new Date();
-  const c = document.getElementById('clk');
-  if (c) c.textContent = now.toLocaleString('en-CA',{weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true,timeZone:'America/Toronto'});
-  const et = new Date(now.toLocaleString('en-US',{timeZone:'America/New_York'}));
-  const d=et.getDay(), m=et.getHours()*60+et.getMinutes(), open=d>=1&&d<=5&&m>=570&&m<960;
-  const dot=document.getElementById('mdot'), lbl=document.getElementById('mlbl');
-  if (dot) dot.className='mdot'+(open?'':' cl');
-  if (lbl) lbl.textContent=open?'Markets Open':'Markets Closed';
+  document.getElementById('live-clock').textContent =
+    new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Toronto', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(now) + ' ET';
+  const tor = new Date(now.toLocaleString('en-US', { timeZone: 'America/Toronto' }));
+  const m = tor.getHours() * 60 + tor.getMinutes(), d = tor.getDay();
+  const open = d >= 1 && d <= 5 && m >= 570 && m < 960;
+  document.getElementById('mkt-dot').className = 'mkt-dot ' + (open ? 'open' : 'closed');
+  document.getElementById('mkt-status').textContent = open ? 'TSX Open' : 'Market Closed';
 }
-tick(); setInterval(tick,1000);
+setInterval(updateClock, 1000); updateClock();
 
-// ─── UTILS ────────────────────────────────────────────────────────────────────
-function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function ago(d){
-  if (!d) return 'Recently';
-  const s=(Date.now()-new Date(d))/1000;
-  if(isNaN(s)||s<0)return'Recently';
-  if(s<60)return'Just now'; if(s<3600)return Math.floor(s/60)+'m ago';
-  if(s<86400)return Math.floor(s/3600)+'h ago'; return Math.floor(s/86400)+'d ago';
+// ═══════════════════════════════════════════════════════════════
+// TRADINGVIEW
+// ═══════════════════════════════════════════════════════════════
+let widgetSeq = 0;
+
+function makeTape() {
+  const wrap = document.getElementById('tape-inner');
+  wrap.innerHTML = '';
+  const wc = document.createElement('div');
+  wc.className = 'tradingview-widget-container';
+  const wi = document.createElement('div');
+  wi.className = 'tradingview-widget-container__widget';
+  wc.appendChild(wi); wrap.appendChild(wc);
+  new TradingView.widget({
+    "width": "100%", "height": 46, "isTransparent": true,
+    "displayMode": "compact", "colorTheme": "dark", "locale": "en",
+    "symbols": [
+      ["Gold",    "OANDA:XAUUSD|1D"],  ["Silver",  "OANDA:XAGUSD|1D"],
+      ["Copper",  "COMEX:HG1!|1D"],    ["WTI",     "NYMEX:CL1!|1D"],
+      ["S&P 500", "TVC:SPX|1D"],       ["Dow",     "TVC:DJI|1D"],
+      ["TSX",     "TSX:TSX|1D"],       ["USD/CAD", "OANDA:USDCAD|1D"]
+    ]
+  });
 }
-function etNow(){return new Date().toLocaleTimeString('en-CA',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'America/Toronto'});}
 
-// ─── GOOGLE NEWS RSS FETCHING ─────────────────────────────────────────────────
-function buildGNewsURL(tab) {
-  const q  = encodeURIComponent(tab.query);
-  const gl = tab.region;
-  const ce = `${gl}:en`;
-  return `https://news.google.com/rss/search?q=${q}&hl=en&gl=${gl}&ceid=${ce}`;
+function makeChart(mountEl, symbol) {
+  const id = 'tv' + (++widgetSeq);
+  mountEl.id = id;
+  new TradingView.widget({
+    "container_id": id, "width": "100%", "height": 150,
+    "symbol": symbol, "interval": "D", "timezone": "America/Toronto",
+    "theme": "dark", "style": "3", "locale": "en",
+    "toolbar_bg": "#111116", "hide_top_toolbar": true, "hide_legend": false,
+    "withdateranges": false, "hide_side_toolbar": true,
+    "allow_symbol_change": false, "save_image": false,
+    "show_popup_button": false, "autosize": false,
+  });
 }
 
-function parseGNewsXML(xml, tabColor) {
-  const doc   = new DOMParser().parseFromString(xml, 'application/xml');
-  const items = Array.from(doc.querySelectorAll('item'));
-  return items.slice(0, 15).map(item => {
-    // Source publisher
-    const sourceEl = item.querySelector('source');
-    const src = sourceEl?.textContent?.trim() || '';
-
-    // Title — Google appends " - Source" at the end; strip it
-    let title = (item.querySelector('title')?.textContent || '').trim();
-    if (src && title.endsWith(' - ' + src)) {
-      title = title.slice(0, -(src.length + 3)).trim();
+function renderGrid(gridId, items) {
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  grid.innerHTML = '';
+  items.forEach(item => {
+    // ── Private / unlisted holding ──
+    if (!item.symbol && !item.yahoo) {
+      const c = document.createElement('div');
+      c.className = 'private-card';
+      c.innerHTML = `<div class="private-card-name">${item.name}</div><div class="private-card-badge">Private — Not Listed</div><div class="private-card-desc">${item.desc || ''}</div>`;
+      grid.appendChild(c);
+      return;
     }
 
-    // Real article URL from description's first <a href>
-    const rawDesc = item.querySelector('description')?.textContent || '';
-    const hrefMatch = rawDesc.match(/href="([^"]+)"/);
-    const url = hrefMatch ? hrefMatch[1] : (item.querySelector('link')?.textContent?.trim() || '');
+    // ── Yahoo Finance fallback (symbol not on TradingView) ──
+    if (item.yahoo) {
+      const card  = document.createElement('div'); card.className  = 'price-card';
+      const frame = document.createElement('div'); frame.className = 'tv-frame';
+      // Build an iframe-free clickable card pointing to Yahoo
+      frame.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;gap:8px;min-height:140px;background:linear-gradient(135deg,rgba(212,168,67,0.04),transparent);';
+      frame.innerHTML = `
+        <div style="font-size:10px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);">Live quote</div>
+        <a href="https://finance.yahoo.com/quote/${encodeURIComponent(item.yahoo)}" target="_blank" rel="noopener"
+           style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--gold);text-decoration:none;display:flex;align-items:center;gap:6px;">
+          View on Yahoo Finance
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+        </a>
+        <div style="font-size:10px;color:var(--text-dim);">Not available on TradingView</div>`;
+      const lbl   = document.createElement('div'); lbl.className   = 'price-card-lbl';
+      lbl.innerHTML = `<span class="price-card-name">${item.name}</span><span class="price-card-ticker">${item.label || item.yahoo}</span>`;
+      card.appendChild(frame); card.appendChild(lbl); grid.appendChild(card);
+      return;
+    }
 
-    // Date
-    const date = item.querySelector('pubDate')?.textContent?.trim() || '';
-
-    return { title, url, date, src };
-  }).filter(a => a.title && a.src && a.url);
+    // ── Normal TradingView widget card ──
+    const card  = document.createElement('div'); card.className  = 'price-card';
+    const frame = document.createElement('div'); frame.className = 'tv-frame';
+    const lbl   = document.createElement('div'); lbl.className   = 'price-card-lbl';
+    lbl.innerHTML = `<span class="price-card-name">${item.name}</span><span class="price-card-ticker">${item.label || item.symbol.split(':').pop()}</span>`;
+    card.appendChild(frame); card.appendChild(lbl); grid.appendChild(card);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      try { makeChart(frame, item.symbol); }
+      catch (e) {
+        frame.style.cssText = 'display:flex;align-items:center;justify-content:center;padding:16px;min-height:90px;';
+        frame.innerHTML = `<a href="https://www.tradingview.com/symbols/${item.symbol.replace(':', '/')}" target="_blank" rel="noopener" style="font-size:11px;color:var(--gold);text-decoration:none;font-family:'Syne',sans-serif;font-weight:600;">${item.symbol.split(':').pop()} — View on TradingView ↗</a>`;
+      }
+    }));
+  });
 }
 
-async function fetchRSS(rssUrl) {
-  for (const proxyFn of PROXIES) {
-    try {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 12000);
-      const res = await fetch(proxyFn(rssUrl), { signal: controller.signal });
-      clearTimeout(timer);
-      if (!res.ok) continue;
-      const text = await res.text();
-      if (!text.includes('<item')) continue;
-      return text;
-    } catch { continue; }
+// ═══════════════════════════════════════════════════════════════
+// TAB SWITCHING
+// ═══════════════════════════════════════════════════════════════
+const loaded = new Set();
+
+function activateTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + tab));
+  if (loaded.has(tab)) return;
+  loaded.add(tab);
+  setDate(tab);
+  switch (tab) {
+    case 'overview':   renderGrid('grid-overview', SECTORS.overview); break;
+    case 'mining':
+      renderGrid('grid-mg', SECTORS['mining-gold']);
+      renderGrid('grid-ms', SECTORS['mining-silver']);
+      renderGrid('grid-mc', SECTORS['mining-copper']);
+      renderGrid('grid-ml', SECTORS['mining-lithium']);
+      renderGrid('grid-mu', SECTORS['mining-uranium']);
+      renderGrid('grid-mo', SECTORS['mining-other']); break;
+    case 'energy':     renderGrid('grid-energy', SECTORS.energy); break;
+    case 'healthcare': renderGrid('grid-health',  SECTORS.health); break;
+    case 'technology': renderGrid('grid-tech',    SECTORS.tech);   break;
+    case 'realestate': renderGrid('grid-re',      SECTORS.re);     break;
+    case 'hospitality':renderGrid('grid-hosp',    SECTORS.hosp);   break;
   }
-  return null;
+  loadNews(tab);
 }
 
-// ─── LOAD TAB ─────────────────────────────────────────────────────────────────
-async function loadTab(id) {
-  const tab = TABS.find(t => t.id === id);
-  if (!tab) return;
-  if (cache[id]?.status === 'done' && Date.now() - cache[id].ts < TTL) { paint(id); return; }
-  cache[id] = { status:'loading' }; paint(id);
+document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => activateTab(b.dataset.tab)));
 
-  try {
-    const rssUrl = buildGNewsURL(tab);
-    const xml    = await fetchRSS(rssUrl);
-
-    if (!xml) throw new Error('Unable to load news feed. Please check your connection and try refreshing.');
-
-    const all      = parseGNewsXML(xml);
-    const filtered = all.filter(a => isReputable(a.src));
-    // Use filtered if enough quality results, otherwise use all (Google News generally curates well)
-    const articles = (filtered.length >= 4 ? filtered : all).slice(0, 9);
-
-    if (!articles.length) throw new Error('No articles found for this topic. Try refreshing.');
-
-    cache[id] = {
-      status:'done', articles, ts:Date.now(),
-      time: new Date().toLocaleTimeString('en-CA',{hour:'2-digit',minute:'2-digit',hour12:true})
-    };
-  } catch(e) {
-    cache[id] = { status:'error', msg: e.message };
-  }
-  paint(id);
-}
-
-// ─── RENDER ───────────────────────────────────────────────────────────────────
-function topRow(tab, s) {
-  const loading = s?.status === 'loading';
-  return `<div class="pt">
-    <div class="ptitle">${tab.name}</div>
-    <div class="ptr">
-      ${s?.time ? `<span class="lupd">Updated ${s.time}</span>` : ''}
-      <button class="rfb" onclick="loadTab('${tab.id}')" ${loading ? 'disabled' : ''}>
-        <svg viewBox="0 0 16 16" fill="none" class="${loading?'spin':''}">
-          <path d="M13.5 8A5.5 5.5 0 1 1 8 2.5a5.5 5.5 0 0 1 3.9 1.6L13.5 2.5V6h-3.5l1.4-1.4"
-            stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        ${loading ? 'Fetching…' : 'Refresh'}
-      </button>
-    </div>
-  </div>`;
-}
-
-function briefSection(articles) {
-  if (!articles?.length) return '';
-  return `<div class="brief">
-    <div class="brief-hdr">
-      <span class="brief-lbl">Today's Brief</span>
-      <span class="brief-time">${etNow()} ET</span>
-    </div>
-    <ul class="brief-list">
-      ${articles.slice(0,4).map(a =>
-        `<li onclick="window.open('${esc(a.url)}','_blank')">${esc(a.title)}<em class="bsrc">— ${esc(a.src)}</em></li>`
-      ).join('')}
-    </ul>
-  </div>`;
-}
-
-function paint(id) {
-  const tab = TABS.find(t => t.id === id);
-  const el  = document.getElementById('p-' + id);
-  if (!el || !tab) return;
-  const s = cache[id];
-
-  if (!s) {
-    el.innerHTML = topRow(tab, null) + `<div class="es">
-      <div class="es-ico">📡</div>
-      <div class="es-h">Ready to load</div>
-      <div class="es-p">Click Refresh to pull live headlines sourced from Reuters, Bloomberg, BBC, Financial Times and more via Google News.</div>
-    </div>`;
-    return;
-  }
-
-  if (s.status === 'loading') {
-    el.innerHTML = topRow(tab, s) + `<div class="skg">
-      ${Array(9).fill(0).map(() => `<div class="skc">
-        <div class="skl sk-s"></div><div class="skl sk-t"></div><div class="skl sk-t2"></div>
-        <div class="skl sk-p"></div><div class="skl sk-p2"></div><div class="skl sk-p3"></div>
-      </div>`).join('')}
-    </div>`;
-    return;
-  }
-
-  if (s.status === 'error') {
-    el.innerHTML = topRow(tab, s) + `<div class="err">
-      <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.4"/>
-      <path d="M8 5v4M8 11v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-      <span>${esc(s.msg)}</span>
-    </div>`;
-    return;
-  }
-
-  if (s.status === 'done') {
-    el.innerHTML = topRow(tab, s) + briefSection(s.articles) + `<div class="ng">
-      ${s.articles.map(a => {
-        const c = srcClr(a.src);
-        return `<div class="nc" style="--sc:${c}" onclick="window.open('${esc(a.url)}','_blank')">
-          <div class="cm">
-            <span class="cs" style="color:${c}">${esc(a.src)}</span>
-            <span class="ca">${ago(a.date)}</span>
-          </div>
-          <div class="ct">${esc(a.title)}</div>
-          <div class="cf">
-            <a class="rl" href="${esc(a.url)}" target="_blank" onclick="event.stopPropagation()">
-              Read article
-              <svg viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </a>
-          </div>
-        </div>`;
-      }).join('')}
-    </div>`;
-  }
-}
-
-// ─── SOURCES PANEL ────────────────────────────────────────────────────────────
-function buildSrc() {
-  document.getElementById('srcgrid').innerHTML = [
-    {name:'Reuters',          cat:'All tabs',       color:'#FF6B35'},
-    {name:'Bloomberg',        cat:'All tabs',        color:'#1967D2'},
-    {name:'Financial Times',  cat:'All tabs',       color:'#E8B882'},
-    {name:'BBC Business',     cat:'All tabs',         color:'#BB1919'},
-    {name:'The Economist',    cat:'All tabs',           color:'#E3120B'},
-    {name:'CNBC',             cat:'All tabs',      color:'#0097D4'},
-    {name:'MarketWatch',      cat:'All tabs',           color:'#00AC4F'},
-    {name:'Wall Street Journal',cat:'All tabs',         color:'#888'},
-    {name:'Associated Press', cat:'All tabs',       color:'#5B9BD5'},
-    {name:'Financial Post',   cat:'All tabs',                  color:'#E31837'},
-    {name:'Globe & Mail',     cat:'All tabs',                  color:'#0073CF'},
-    {name:'BNN Bloomberg',    cat:'All tabs',        color:'#1967D2'},
-    {name:'CBC Business',     cat:'Canada',                  color:'#D4373C'},
-    {name:'Mining.com',       cat:'Gold & Mining',           color:'#4CAF50'},
-    {name:'Kitco News',       cat:'Precious Metals',         color:'#D4A843'},
-    {name:'Northern Miner',   cat:'Mining Industry',         color:'#8B6914'},
-    {name:'The Guardian',     cat:'All tabs',          color:'#052962'},
-    {name:'S&P Global',       cat:'Ratings, Commodities',    color:'#CC2529'},
-  ].map(s => `<div class="srci">
-    <div class="sdot" style="background:${s.color}"></div>
-    <div><div class="sname">${esc(s.name)}</div><div class="scat">${esc(s.cat)}</div></div>
-  </div>`).join('');
-}
-
+// ═══════════════════════════════════════════════════════════════
+// SOURCES PANEL
+// ═══════════════════════════════════════════════════════════════
+const APPROVED = [
+  'Reuters','Bloomberg','BNN Bloomberg','Financial Post','Globe and Mail',
+  'CBC News','Mining.com','Kitco','Northern Miner','MarketWatch',
+  'Wall Street Journal','Financial Times','The Economist','Associated Press',
+  'The Logic','GlobeNewswire','Newswire Canada','Stockhouse','Proactive Investors',
+  'Investing News','CEO.CA','Resource World',
+];
 function toggleSrc() {
-  const g=document.getElementById('srcgrid'), t=document.getElementById('srctog');
-  const open=g.style.display==='grid';
-  g.style.display=open?'none':'grid';
-  t.classList.toggle('open',!open);
+  document.getElementById('src-toggle').classList.toggle('open');
+  document.getElementById('src-body').classList.toggle('open');
 }
+document.getElementById('src-list').innerHTML = APPROVED.map(s => `<div class="src-tag">${s}</div>`).join('');
 
-// ─── INIT ─────────────────────────────────────────────────────────────────────
-function init() {
-  const panels = document.getElementById('panels');
-  TABS.forEach(tab => {
-    const d = document.createElement('div');
-    d.className = 'pn' + (tab.id === 'gold' ? ' on' : '');
-    d.id = 'p-' + tab.id;
-    panels.appendChild(d);
-    paint(tab.id);
-  });
-  document.querySelectorAll('.tb').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.tb').forEach(b => b.classList.remove('on'));
-      document.querySelectorAll('.pn').forEach(p => p.classList.remove('on'));
-      btn.classList.add('on');
-      const id = btn.dataset.tab;
-      document.getElementById('p-' + id).classList.add('on');
-      if (!cache[id]) loadTab(id);
-    });
-  });
-  buildSrc();
-  loadTab('gold');
-}
-
-init();
+// ═══════════════════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  makeTape();
+  activateTab('overview');
+});
 </script>
 </body>
 </html>
