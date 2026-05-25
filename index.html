@@ -239,7 +239,7 @@ footer{border-top:1px solid var(--b);padding:1.5rem 0;margin-top:1rem}
 // ════════════════════════════════════════════════════════
 // CONFIGURATION — set your Anthropic API key here when hosting
 // ════════════════════════════════════════════════════════
-const ANTHROPIC_API_KEY = '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';  // ← paste your key between the quotes when self-hosting
+const ANTHROPIC_API_KEY = '';  // ← paste your key between the quotes when self-hosting
 
 // ════════════════════════════════════════════════════════
 // PORTFOLIO DATA
@@ -444,7 +444,6 @@ const IS_LOCAL = location.protocol === 'file:';
 // AI NEWS — multi-turn agentic fetch
 // ════════════════════════════════════════════════════════
 async function callClaude(messages, system, useSearch){
-  const key = ANTHROPIC_API_KEY || '';
   const body = {
     model:'claude-sonnet-4-20250514',
     max_tokens:2000,
@@ -452,9 +451,9 @@ async function callClaude(messages, system, useSearch){
     messages,
   };
   if(useSearch) body.tools=[{type:'web_search_20250305',name:'web_search'}];
-  const r = await fetch('https://api.anthropic.com/v1/messages',{
+  const r = await fetch('https://small-tooth-fe4d.frasercanavan.workers.dev',{
     method:'POST',
-    headers:{'Content-Type':'application/json',...(key?{'x-api-key':key}:{})},
+    headers:{'Content-Type':'application/json'},
     body:JSON.stringify(body),
   });
   if(!r.ok) throw new Error('API '+r.status);
