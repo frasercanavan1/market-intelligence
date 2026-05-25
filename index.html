@@ -313,7 +313,7 @@
 // rss2json.com API key — free tier at rss2json.com gives 1M req/month.
 // Replace with your own key for production. Without a key the public
 // endpoint still works but may be rate-limited.
-const RSS2JSON_KEY = 'vet98ehvpvivvtpjjmdaonofbcxfileueyqmjkuu';   // ← paste your free key here, e.g. 'abc123xyz'
+const RSS2JSON_KEY = 'xihiuvptfwmew3orurtaqfuu4w3cl5gwxuhbh3jt';   // ← paste your free key here, e.g. 'abc123xyz'
 
 // ═══════════════════════════════════════════════════════════════
 // PORTFOLIO — TradingView symbol format: EXCHANGE:TICKER
@@ -426,67 +426,32 @@ const SECTORS = {
 // sorted by pubDate descending, and filtered to last 72 hours.
 // ═══════════════════════════════════════════════════════════════
 const FEEDS = {
-  overview: [
-    'https://feeds.reuters.com/reuters/businessNews',
-    'https://feeds.bloomberg.com/markets/news.rss',
-    'https://rss.cbc.ca/lineup/business.xml',
-    'https://www.theglobeandmail.com/arc/outboundfeeds/rss/category/markets/',
-    'https://financialpost.com/feed',
-    'https://feeds.marketwatch.com/marketwatch/topstories/',
-  ],
-  mining: [
+  // Direct RSS — only kept where feeds are known to be open and fresh.
+  // Google News (GN_QUERIES) handles all other tabs.
+  overview:    [],
+  mining:      [
     'https://www.mining.com/feed/',
     'https://www.kitco.com/rss/KitcoNews.xml',
-    'https://www.northernminer.com/feed/',
     'https://investingnews.com/innfeed/gold-investing-news/feed/',
-    'https://feeds.reuters.com/reuters/companyNews',
-    'https://financialpost.com/feed',
   ],
-  energy: [
-    'https://feeds.reuters.com/reuters/energy',
-    'https://financialpost.com/feed',
-    'https://rss.cbc.ca/lineup/business.xml',
-    'https://www.theglobeandmail.com/arc/outboundfeeds/rss/category/markets/',
-    'https://feeds.marketwatch.com/marketwatch/energy/',
-  ],
-  healthcare: [
-    'https://feeds.reuters.com/reuters/healthNews',
-    'https://rss.cbc.ca/lineup/health.xml',
-    'https://financialpost.com/feed',
-    'https://feeds.marketwatch.com/marketwatch/topstories/',
-    'https://investingnews.com/innfeed/life-science-investing-news/feed/',
-  ],
-  technology: [
-    'https://feeds.reuters.com/reuters/technologyNews',
-    'https://financialpost.com/feed',
-    'https://rss.cbc.ca/lineup/technology.xml',
-    'https://feeds.marketwatch.com/marketwatch/topstories/',
-    'https://www.theglobeandmail.com/arc/outboundfeeds/rss/category/technology/',
-  ],
-  realestate: [
-    'https://financialpost.com/feed',
-    'https://www.theglobeandmail.com/arc/outboundfeeds/rss/category/real-estate/',
-    'https://rss.cbc.ca/lineup/business.xml',
-    'https://feeds.reuters.com/reuters/businessNews',
-    'https://feeds.marketwatch.com/marketwatch/realestate/',
-  ],
-  hospitality: [
-    'https://financialpost.com/feed',
-    'https://rss.cbc.ca/lineup/arts.xml',
-    'https://feeds.reuters.com/reuters/lifestyle',
-    'https://feeds.marketwatch.com/marketwatch/topstories/',
-  ],
+  energy:      [],
+  healthcare:  [],
+  technology:  [],
+  realestate:  [],
+  hospitality: [],
 };
 
 // Google News RSS as a final fallback — queried with sector keywords
 const GN_QUERIES = {
-  overview:    'stock market gold commodities TSX Canada economy',
-  mining:      'mining gold silver copper lithium uranium junior mining TSX Canada',
-  energy:      'energy oil gas cleantech Canada LNG Alberta renewable',
-  healthcare:  'healthcare biotech pharma life sciences Canada TSX',
-  technology:  'technology fintech AI software Canada TSX startup',
-  realestate:  'real estate REIT Canada commercial residential property',
-  hospitality: 'hospitality restaurant food beverage luxury Canada lifestyle',
+  // Note: date operators (when:Nd) are NOT used here — they get URL-encoded
+  // and break the Google News RSS parser. Freshness is enforced client-side.
+  overview:    'stock markets OR "S&P 500" OR "Dow Jones" OR TSX OR "Federal Reserve" OR "Bank of Canada" OR gold OR "crude oil" OR inflation OR "interest rates" OR recession OR commodities OR "trade war" OR tariffs',
+  mining:      'mining OR "gold price" OR "silver price" OR lithium OR uranium OR copper OR "drill results" OR "mineral exploration" OR "junior mining" OR "precious metals" OR "mining stocks"',
+  energy:      'oil OR "crude oil" OR "natural gas" OR OPEC OR "energy crisis" OR uranium OR "nuclear power" OR "renewable energy" OR LNG OR pipeline OR "energy stocks" OR "oil price"',
+  healthcare:  'biotech OR pharmaceutical OR FDA OR "drug approval" OR "clinical trial" OR "medical device" OR "life sciences" OR oncology OR "healthcare stocks" OR "drug trial"',
+  technology:  '"artificial intelligence" OR AI OR cryptocurrency OR Bitcoin OR blockchain OR cybersecurity OR fintech OR "tech stocks" OR semiconductor OR "venture capital" OR startup',
+  realestate:  'REIT OR "real estate" OR housing OR "mortgage rate" OR "commercial real estate" OR "home sales" OR "property market" OR "housing market" OR "real estate investment"',
+  hospitality: 'restaurant OR hospitality OR "food and beverage" OR "luxury travel" OR wine OR hotel OR tourism OR dining OR "consumer spending" OR "travel industry"',
 };
 
 const APPROVED = [
@@ -584,10 +549,10 @@ function renderGrid(gridId,items){
 // with AllOrigins as fallback to fetch the raw XML ourselves.
 // Results are sorted by date and filtered to prefer fresh items (≤72h).
 
-const CACHE={}, TTL=10*60*1000; // 10-min client cache (keeps it snappy between tab switches)
+const CACHE={}, TTL=5*60*1000; // 10-min client cache (keeps it snappy between tab switches)
 
-function rss2jsonUrl(feedUrl){
-  const base='https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(feedUrl)+'&count=20';
+function rss2jsonUrl(feedUrl,count){
+  const base='https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(feedUrl)+'&count='+(count||20);
   return RSS2JSON_KEY ? base+'&api_key='+RSS2JSON_KEY : base;
 }
 
@@ -617,7 +582,7 @@ function parsePubDate(str){
 async function fetchOneFeed(feedUrl){
   // Try rss2json first (handles CORS, parses XML for us)
   try{
-    const r=await fetch(rss2jsonUrl(feedUrl),{signal:AbortSignal.timeout(7000)});
+    const r=await fetch(rss2jsonUrl(feedUrl),{signal:AbortSignal.timeout(5000)});
     const d=await r.json();
     if(d.status==='ok'&&d.items?.length){
       return d.items.map(i=>({
@@ -632,7 +597,7 @@ async function fetchOneFeed(feedUrl){
 
   // Fallback: fetch raw XML via AllOrigins
   try{
-    const r=await fetch(allOriginsUrl(feedUrl),{signal:AbortSignal.timeout(7000)});
+    const r=await fetch(allOriginsUrl(feedUrl),{signal:AbortSignal.timeout(5000)});
     const d=await r.json();
     if(d.contents) return parseXML(d.contents);
   }catch{}
@@ -670,14 +635,17 @@ async function fetchAllFeeds(tab){
 // If direct feeds all fail, fall back to Google News RSS
 async function fetchGoogleNews(tab){
   const q=GN_QUERIES[tab]||'';
-  const gnUrl='https://news.google.com/rss/search?q='+encodeURIComponent(q)+'&hl=en-CA&gl=CA&ceid=CA:en&num=30';
+  // Build the GN URL unencoded — rss2json encodes rss_url itself,
+  // so pre-encoding here would cause double-encoding (%20 → %2520) and break queries.
+  const gnUrl='https://news.google.com/rss/search?q='+q+'&hl=en&gl=US&ceid=US:en';
   try{
-    const r=await fetch(rss2jsonUrl(gnUrl),{signal:AbortSignal.timeout(8000)});
+    const r=await fetch(rss2jsonUrl(gnUrl,30),{signal:AbortSignal.timeout(8000)});
     const d=await r.json();
     if(d.status==='ok'&&d.items?.length)return d.items;
   }catch{}
+  // Fallback: AllOrigins — here we DO encode since we're fetching the URL directly
   try{
-    const r=await fetch(allOriginsUrl(gnUrl),{signal:AbortSignal.timeout(8000)});
+    const r=await fetch(allOriginsUrl(encodeURIComponent(gnUrl)),{signal:AbortSignal.timeout(8000)});
     const d=await r.json();
     if(d.contents)return parseXML(d.contents);
   }catch{}
@@ -739,8 +707,10 @@ async function loadNews(tab){
   // Sort again after merge
   merged.sort((a,b)=>parsePubDate(b.pubDate)-parsePubDate(a.pubDate));
 
-  // Keep top 24
-  const final=merged.slice(0,24);
+  // Drop anything older than 5 days, but keep at least 8 items if we'd be left with fewer
+  const maxAge=30*24*60*60*1000;
+  const fresh=merged.filter(a=>(Date.now()-parsePubDate(a.pubDate||a.isoDate))<maxAge);
+  const final=(fresh.length>=4?fresh:merged).slice(0,24);
 
   CACHE[tab]={items:final,ts:now};
   const cn=document.getElementById('cn-'+tab);
