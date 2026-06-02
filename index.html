@@ -906,28 +906,51 @@ function setBrief(tab, items) {
 const loaded=new Set();
 
 function activateTab(tab){
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
-  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id==='tab-'+tab));
-  if(loaded.has(tab))return;
-  loaded.add(tab);
+  document.querySelectorAll('.tab-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.tab === tab)
+  );
+  document.querySelectorAll('.tab-panel').forEach(p =>
+    p.classList.toggle('active', p.id === 'tab-' + tab)
+  );
+
   setDate(tab);
 
+  const needsRender = !loaded.has(tab);
+  if (needsRender) loaded.add(tab);
+
   switch(tab){
-    case 'overview':    renderGrid('grid-overview',SECTORS.overview); break;
+    case 'overview':
+      document.getElementById('grid-overview').innerHTML = '';
+      renderGrid('grid-overview', SECTORS.overview);
+      break;
     case 'mining':
-      renderGrid('grid-mg',SECTORS['mining-gold']);
-      renderGrid('grid-ms',SECTORS['mining-silver']);
-      renderGrid('grid-mc',SECTORS['mining-copper']);
-      renderGrid('grid-ml',SECTORS['mining-lithium']);
-      renderGrid('grid-mu',SECTORS['mining-uranium']);
-      renderGrid('grid-mo',SECTORS['mining-other']); break;
-    case 'energy':      renderGrid('grid-energy',SECTORS.energy); break;
-    case 'healthcare':  renderGrid('grid-health', SECTORS.health); break;
-    case 'technology':  renderGrid('grid-tech',   SECTORS.tech);   break;
-    case 'realestate':  renderGrid('grid-re',     SECTORS.re);     break;
-    case 'hospitality': renderGrid('grid-hosp',   SECTORS.hosp);   break;
+      if (needsRender) {
+        renderGrid('grid-mg', SECTORS['mining-gold']);
+        renderGrid('grid-ms', SECTORS['mining-silver']);
+        renderGrid('grid-mc', SECTORS['mining-copper']);
+        renderGrid('grid-ml', SECTORS['mining-lithium']);
+        renderGrid('grid-mu', SECTORS['mining-uranium']);
+        renderGrid('grid-mo', SECTORS['mining-other']);
+      }
+      break;
+    case 'energy':
+      if (needsRender) renderGrid('grid-energy', SECTORS.energy);
+      break;
+    case 'healthcare':
+      if (needsRender) renderGrid('grid-health', SECTORS.health);
+      break;
+    case 'technology':
+      if (needsRender) renderGrid('grid-tech', SECTORS.tech);
+      break;
+    case 'realestate':
+      if (needsRender) renderGrid('grid-re', SECTORS.re);
+      break;
+    case 'hospitality':
+      if (needsRender) renderGrid('grid-hosp', SECTORS.hosp);
+      break;
   }
-  loadNews(tab);
+
+  if (!CACHE[tab]) loadNews(tab);
 }
 
 document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>activateTab(b.dataset.tab)));
@@ -944,17 +967,12 @@ document.getElementById('src-list').innerHTML=APPROVED.map(s=>`<div class="src-t
 // ═══════════════════════════════════════════════════════════════
 // BOOT
 // ═══════════════════════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('load', () => {
   makeTape();
 
-  requestAnimationFrame(() => {
+  setTimeout(() => {
     activateTab('overview');
-
-    setTimeout(() => {
-      loaded.delete('overview');
-      activateTab('overview');
-    }, 250);
-  });
+  }, 300);
 });
 </script>
 </body>
