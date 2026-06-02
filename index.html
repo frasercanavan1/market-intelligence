@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
-<script src="https://s3.tradingview.com/tv.js"></script>
+<script src="https://s3.tradingview.com/tv.js" defer></script>
 <style>
   :root {
     --bg:#09090C; --bg-2:#0F0F14; --bg-3:#141419; --bg-card:#111116;
@@ -934,7 +934,7 @@ function setBrief(tab, items) {
 // ═══════════════════════════════════════════════════════════════
 // TAB SWITCHING
 // ═══════════════════════════════════════════════════════════════
-const loaded=new Set();
+const loaded = new Set();
 
 function activateTab(tab){
   document.querySelectorAll('.tab-btn').forEach(b =>
@@ -944,44 +944,41 @@ function activateTab(tab){
     p.classList.toggle('active', p.id === 'tab-' + tab)
   );
 
-  setDate(tab);
+  if (loaded.has(tab)) return;
+  loaded.add(tab);
 
-  const needsRender = !loaded.has(tab);
-  if (needsRender) loaded.add(tab);
+  setDate(tab);
 
   switch(tab){
     case 'overview':
-      document.getElementById('grid-overview').innerHTML = '';
       renderGrid('grid-overview', SECTORS.overview);
       break;
     case 'mining':
-      if (needsRender) {
-        renderGrid('grid-mg', SECTORS['mining-gold']);
-        renderGrid('grid-ms', SECTORS['mining-silver']);
-        renderGrid('grid-mc', SECTORS['mining-copper']);
-        renderGrid('grid-ml', SECTORS['mining-lithium']);
-        renderGrid('grid-mu', SECTORS['mining-uranium']);
-        renderGrid('grid-mo', SECTORS['mining-other']);
-      }
+      renderGrid('grid-mg', SECTORS['mining-gold']);
+      renderGrid('grid-ms', SECTORS['mining-silver']);
+      renderGrid('grid-mc', SECTORS['mining-copper']);
+      renderGrid('grid-ml', SECTORS['mining-lithium']);
+      renderGrid('grid-mu', SECTORS['mining-uranium']);
+      renderGrid('grid-mo', SECTORS['mining-other']);
       break;
     case 'energy':
-      if (needsRender) renderGrid('grid-energy', SECTORS.energy);
+      renderGrid('grid-energy', SECTORS.energy);
       break;
     case 'healthcare':
-      if (needsRender) renderGrid('grid-health', SECTORS.health);
+      renderGrid('grid-health', SECTORS.health);
       break;
     case 'technology':
-      if (needsRender) renderGrid('grid-tech', SECTORS.tech);
+      renderGrid('grid-tech', SECTORS.tech);
       break;
     case 'realestate':
-      if (needsRender) renderGrid('grid-re', SECTORS.re);
+      renderGrid('grid-re', SECTORS.re);
       break;
     case 'hospitality':
-      if (needsRender) renderGrid('grid-hosp', SECTORS.hosp);
+      renderGrid('grid-hosp', SECTORS.hosp);
       break;
   }
 
-  if (!CACHE[tab]) loadNews(tab);
+  loadNews(tab);
 }
 
 document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>activateTab(b.dataset.tab)));
