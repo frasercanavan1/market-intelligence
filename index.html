@@ -541,28 +541,59 @@ function makeChart(mountEl,symbol){
   });
 }
 
-function renderGrid(gridId,items){
-  const grid=document.getElementById(gridId); if(!grid)return;
-  grid.innerHTML='';
-  items.forEach(item=>{
-    if(!item.symbol){
-      const c=document.createElement('div'); c.className='private-card';
-      c.innerHTML=`<div class="private-card-name">${item.name}</div><div class="private-card-badge">Private — Not Listed</div><div class="private-card-desc">${item.desc||''}</div>`;
-      grid.appendChild(c); return;
+function renderGrid(gridId, items){
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+
+  grid.innerHTML = '';
+
+  const chartQueue = [];
+
+  items.forEach(item => {
+    if (!item.symbol) {
+      const c = document.createElement('div');
+      c.className = 'private-card';
+      c.innerHTML = `
+        <div class="private-card-name">${item.name}</div>
+        <div class="private-card-badge">Private — Not Listed</div>
+        <div class="private-card-desc">${item.desc || ''}</div>
+      `;
+      grid.appendChild(c);
+      return;
     }
-    const card=document.createElement('div'); card.className='price-card';
-    const frame=document.createElement('div'); frame.className='tv-frame'; card.appendChild(frame);
-    const lbl=document.createElement('div'); lbl.className='price-card-lbl';
-    lbl.innerHTML=`<span class="price-card-name">${item.name}</span><span class="price-card-ticker">${item.label||item.symbol.split(':').pop()}</span>`;
-    card.appendChild(lbl); grid.appendChild(card);
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{
-      try{ makeChart(frame,item.symbol); }
-      catch(e){
-        frame.style.cssText='display:flex;align-items:center;justify-content:center;padding:16px;min-height:90px;';
-        frame.innerHTML=`<a href="https://www.tradingview.com/symbols/${item.symbol.replace(':','/')}" target="_blank" rel="noopener" style="font-size:11px;color:var(--gold);text-decoration:none;font-family:'Syne',sans-serif;font-weight:600;">${item.symbol.split(':').pop()} — View on TradingView ↗</a>`;
-      }
-    }));
+
+    const card = document.createElement('div');
+    card.className = 'price-card';
+
+    const frame = document.createElement('div');
+    frame.className = 'tv-frame';
+    card.appendChild(frame);
+
+    const lbl = document.createElement('div');
+    lbl.className = 'price-card-lbl';
+    lbl.innerHTML = `
+      <span class="price-card-name">${item.name}</span>
+      <span class="price-card-ticker">${item.label || item.symbol.split(':').pop()}</span>
+    `;
+
+    card.appendChild(lbl);
+    grid.appendChild(card);
+
+    chartQueue.push({ frame, symbol: item.symbol });
   });
+
+  setTimeout(() => {
+    chartQueue.forEach(({ frame, symbol }, index) => {
+      setTimeout(() => {
+        try {
+          makeChart(frame, symbol);
+        } catch (e) {
+          frame.style.cssText = 'display:flex;align-items:center;justify-content:center;padding:16px;min-height:90px;';
+          frame.innerHTML = `<a href="https://www.tradingview.com/symbols/${symbol.replace(':','/')}" target="_blank" rel="noopener" style="font-size:11px;color:var(--gold);text-decoration:none;font-family:'Syne',sans-serif;font-weight:600;">${symbol.split(':').pop()} — View on TradingView ↗</a>`;
+        }
+      }, index * 60);
+    });
+  }, 250);
 }
 
 // ═══════════════════════════════════════════════════════════════
