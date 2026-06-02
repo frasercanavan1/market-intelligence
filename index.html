@@ -452,9 +452,10 @@ const FEEDS = {
     'https://feeds.a.dj.com/rss/RSSWSJD.xml'
   ],
   realestate: [
-    'https://rss.nytimes.com/services/xml/rss/nyt/RealEstate.xml',
-    'https://feeds.a.dj.com/rss/RSSMarketsMain.xml'
-  ],
+  'https://rss.nytimes.com/services/xml/rss/nyt/RealEstate.xml',
+  'https://mediaroom.realtor.com/rss',
+  'http://feeds.bbci.co.uk/news/business/rss.xml'
+],
   hospitality: [
     'https://rss.nytimes.com/services/xml/rss/nyt/Travel.xml',
     'http://feeds.bbci.co.uk/news/world/rss.xml'
@@ -473,7 +474,7 @@ const GN_QUERIES = {
 
   technology: '(site:reuters.com OR site:bloomberg.com OR site:ft.com OR site:wsj.com OR site:nytimes.com OR site:apnews.com OR site:bbc.com OR site:thelogic.co) ("artificial intelligence" OR AI OR semiconductor OR cybersecurity OR fintech OR blockchain OR startup OR "venture capital")',
 
-  realestate: '(site:reuters.com OR site:bloomberg.com OR site:ft.com OR site:wsj.com OR site:nytimes.com OR site:apnews.com OR site:bbc.com OR site:theglobeandmail.com OR site:financialpost.com) (REIT OR "real estate" OR housing OR "mortgage rates" OR "commercial real estate" OR "property market" OR "home sales")',
+  realestate: '(site:reuters.com OR site:bloomberg.com OR site:ft.com OR site:wsj.com OR site:nytimes.com OR site:apnews.com OR site:bbc.com OR site:theglobeandmail.com OR site:financialpost.com OR site:realtor.com) (housing OR real estate OR home sales OR mortgage rates OR commercial real estate OR property market OR housing market OR REIT)',
 
   hospitality: '(site:reuters.com OR site:bloomberg.com OR site:ft.com OR site:wsj.com OR site:nytimes.com OR site:apnews.com OR site:bbc.com) (hospitality OR restaurant OR hotel OR tourism OR travel OR wine OR dining OR "consumer spending" OR "luxury travel")'
 };
