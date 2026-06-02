@@ -944,9 +944,17 @@ document.getElementById('src-list').innerHTML=APPROVED.map(s=>`<div class="src-t
 // ═══════════════════════════════════════════════════════════════
 // BOOT
 // ═══════════════════════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded',()=>{
+document.addEventListener('DOMContentLoaded', () => {
   makeTape();
-  activateTab('overview');
+
+  requestAnimationFrame(() => {
+    activateTab('overview');
+
+    setTimeout(() => {
+      loaded.delete('overview');
+      activateTab('overview');
+    }, 250);
+  });
 });
 </script>
 </body>
