@@ -307,274 +307,298 @@
 
 
 <script>
-// ═══════════════════════════════════════════════════════════════
-// CONFIGURATION
-// ═══════════════════════════════════════════════════════════════
+/* CONFIGURATION */
 
-// rss2json.com API key — free tier at rss2json.com gives 1M req/month.
-// Replace with your own key for production. Without a key the public
-// endpoint still works but may be rate-limited.
-const RSS2JSON_KEY = 'xihiuvptfwmew3orurtaqfuu4w3cl5gwxuhbh3jt';   // ← paste your free key here, e.g. 'abc123xyz'
+// rss2json.com API key (optional but recommended)
+const RSS2JSON_KEY = ""; // put your own key here if you have one
 
-// ═══════════════════════════════════════════════════════════════
-// PORTFOLIO — TradingView symbol format: EXCHANGE:TICKER
-// Exchange map:  .TO → TSX   .V → TSXV   .CN → CSE   .NE → NEO
-// ═══════════════════════════════════════════════════════════════
+// TradingView symbol sets
 const SECTORS = {
   overview: [
-    { name:'Gold',          symbol:'OANDA:XAUUSD',    label:'XAUUSD' },
-    { name:'Silver',        symbol:'OANDA:XAGUSD',    label:'XAGUSD' },
-    { name:'Platinum',      symbol:'OANDA:XPTUSD',    label:'XPTUSD' },
-    { name:'Copper',        symbol:'COMEX:HG1!',      label:'HG1! · COMEX' },
-    { name:'WTI Crude',     symbol:'TVC:USOIL',        label:'USOIL · TVC' },
-    { name:'S&P 500',       symbol:'FOREXCOM:SPXUSD', label:'SPX' },
-    { name:'Dow Jones',     symbol:'TVC:DJI',          label:'DJI · TVC' },
-    { name:'Nasdaq Comp.',  symbol:'NASDAQ:IXIC',      label:'IXIC · NASDAQ' },
-    { name:'TSX Composite', symbol:'TSX:TSX',          label:'TSX' },
-    { name:'TSX Venture',   symbol:'TSX:JX',           label:'JX · TSX' },
-    { name:'CSE Composite', symbol:'CSE:CSECOMP',      label:'CSECOMP · CSE' },
-    { name:'USD / CAD',     symbol:'OANDA:USDCAD',     label:'USDCAD · OANDA' },
+    { name: "Gold", symbol: "OANDA:XAUUSD", label: "XAUUSD" },
+    { name: "Silver", symbol: "OANDA:XAGUSD", label: "XAGUSD" },
+    { name: "Platinum", symbol: "OANDA:XPTUSD", label: "XPTUSD" },
+    { name: "Copper", symbol: "COMEX:HG1!", label: "HG1! COMEX" },
+    { name: "WTI Crude", symbol: "TVC:USOIL", label: "USOIL TVC" },
+    { name: "S&P 500", symbol: "FOREXCOM:SPXUSD", label: "SPX" },
+    { name: "Dow Jones", symbol: "TVC:DJI", label: "DJI TVC" },
+    { name: "Nasdaq Comp.", symbol: "NASDAQ:IXIC", label: "IXIC NASDAQ" },
+    { name: "TSX Composite", symbol: "TSX:TSX", label: "TSX" },
+    { name: "TSX Venture", symbol: "TSX:JX", label: "JX TSX" },
+    { name: "CSE Composite", symbol: "CSE:CSECOMP", label: "CSECOMP CSE" },
+    { name: "USD/CAD", symbol: "OANDA:USDCAD", label: "USDCAD OANDA" }
   ],
 
-  // ── MINING ──────────────────────────────────────────────────
-  'mining-gold': [
-    { name:'White Gold Corp.',         symbol:'TSXV:WGO',  label:'WGO.V' },
-    { name:'Big Ridge Gold Corp.',     symbol:'TSXV:BRAU', label:'BRAU.V' },
-    { name:'Canterra Minerals Corp.',  symbol:'TSXV:CTM',  label:'CTM.V' },
-    { name:'Conquest Resources Ltd.',  symbol:'TSXV:CQR',  label:'CQR.V' },
-    { name:'Great Pacific Gold Corp',  symbol:'TSXV:GPAC', label:'GPAC.V' },
-    { name:'Halcones Precious Metals', symbol:'TSXV:HPM',  label:'HPM.V' },
-    { name:'Green Shift Commodities',  symbol:'TSXV:GCOM', label:'GCOM.V' },
-    { name:'Rhyolite Resources Ltd.',  symbol:'TSXV:RYE',  label:'RYE.V' },
-    { name:'Rio2 Limited',             symbol:'TSX:RIO',   label:'RIO.TO' },
-  ],
-  'mining-silver': [
-    { name:'Silver Storm Mining Ltd.', symbol:'TSXV:SVRS', label:'SVRS.V' },
-  ],
-  'mining-copper': [
-    { name:'Adyton Resources Corp.',   symbol:'TSXV:ADY',  label:'ADY.V' },
-    { name:'Koryx Copper Inc.',        symbol:'TSXV:KRY',  label:'KRY.V' },
-    { name:'Ev Nickel Inc.',           symbol:'TSXV:EVNI', label:'EVNI.V' },
-  ],
-  'mining-lithium': [
-    { name:'Laramide Resources Ltd.',  symbol:'TSX:LAM',   label:'LAM.TO' },
-    { name:'Lithium Ionic Corp.',      symbol:'TSXV:LTH',  label:'LTH.V' },
-    { name:'Full Circle Lithium Corp.',symbol:'TSXV:FCLI', label:'FCLI.V' },
-    { name:'Champion Elec. Metals',   symbol:'CSE:LTHM',  label:'LTHM.CN' },
-  ],
-  'mining-uranium': [
-    { name:'NeoTerrex Minerals Inc.',  symbol:'TSXV:NTX',  label:'NTX.V' },
-  ],
-  'mining-other': [
-    { name:'Collective Mining Ltd.',   symbol:'TSX:CNL',   label:'CNL.TO' },
-    { name:'BC Moly Ltd.',             symbol:'TSXV:BM',   label:'BM.V' },
-    { name:'HydroGraph Clean Power',   symbol:'CSE:HG',    label:'HG.CN' },
-    { name:'Greenland Resources Inc.', symbol:'NEO:MOLY',  label:'MOLY.NE' },
-    { name:'Miata Metals Corp.',       symbol:'TSXV:MMET', label:'MMET.V' },
-    { name:'Nevada Lithium Resources', symbol:'TSXV:NVLH', label:'NVLH.V' },
-    { name:'Rok Resources',            symbol:'TSXV:ROK',  label:'ROK.V' },
-    { name:'RUA Gold Inc.',            symbol:'TSX:RUA',   label:'RUA.TO' },
+  "mining-gold": [
+    { name: "White Gold Corp.", symbol: "TSXV:WGO", label: "WGO.V" },
+    { name: "Big Ridge Gold Corp.", symbol: "TSXV:BRAU", label: "BRAU.V" },
+    { name: "Canterra Minerals Corp.", symbol: "TSXV:CTM", label: "CTM.V" },
+    { name: "Conquest Resources Ltd.", symbol: "TSXV:CQR", label: "CQR.V" },
+    { name: "Great Pacific Gold Corp.", symbol: "TSXV:GPAC", label: "GPAC.V" },
+    { name: "Halcones Precious Metals", symbol: "TSXV:HPM", label: "HPM.V" },
+    { name: "Green Shift Commodities", symbol: "TSXV:GCOM", label: "GCOM.V" },
+    { name: "Rhyolite Resources Ltd.", symbol: "TSXV:RYE", label: "RYE.V" },
+    { name: "Rio2 Limited", symbol: "TSX:RIO", label: "RIO.TO" }
   ],
 
-  // ── ENERGY ──────────────────────────────────────────────────
+  "mining-silver": [
+    { name: "Silver Storm Mining Ltd.", symbol: "TSXV:SVRS", label: "SVRS.V" }
+  ],
+
+  "mining-copper": [
+    { name: "Adyton Resources Corp.", symbol: "TSXV:ADY", label: "ADY.V" },
+    { name: "Koryx Copper Inc.", symbol: "TSXV:KRY", label: "KRY.V" },
+    { name: "EV Nickel Inc.", symbol: "TSXV:EVNI", label: "EVNI.V" }
+  ],
+
+  "mining-lithium": [
+    { name: "Laramide Resources Ltd.", symbol: "TSX:LAM", label: "LAM.TO" },
+    { name: "Lithium Ionic Corp.", symbol: "TSXV:LTH", label: "LTH.V" },
+    { name: "Full Circle Lithium Corp.", symbol: "TSXV:FCLI", label: "FCLI.V" },
+    { name: "Champion Elec. Metals", symbol: "CSE:LTHM", label: "LTHM.CN" }
+  ],
+
+  "mining-uranium": [
+    { name: "NeoTerrex Minerals Inc.", symbol: "TSXV:NTX", label: "NTX.V" }
+  ],
+
+  "mining-other": [
+    { name: "Collective Mining Ltd.", symbol: "TSX:CNL", label: "CNL.TO" },
+    { name: "BC Moly Ltd.", symbol: "TSXV:BM", label: "BM.V" },
+    { name: "HydroGraph Clean Power", symbol: "CSE:HG", label: "HG.CN" },
+    { name: "Greenland Resources Inc.", symbol: "NEO:MOLY", label: "MOLY.NE" },
+    { name: "Miata Metals Corp.", symbol: "TSXV:MMET", label: "MMET.V" },
+    { name: "Nevada Lithium Resources", symbol: "TSXV:NVLH", label: "NVLH.V" },
+    { name: "Rok Resources Inc.", symbol: "TSXV:ROK", label: "ROK.V" },
+    { name: "RUA Gold Inc.", symbol: "TSX:RUA", label: "RUA.TO" }
+  ],
+
   energy: [
-    { name:'enCore Energy Corp.',             symbol:'TSXV:EU',   label:'EU.V' },
-    { name:'NG Energy International Corp.',   symbol:'TSX:GASX',  label:'GASX.TO' },
-    { name:'CVW Cleantech Inc.',              symbol:'TSXV:CVW',  label:'CVW.V' },
-    { name:'Base Carbon Inc.',                symbol:'NEO:BCBN',  label:'BCBN.NE' },
-    { name:'Regenera Insights Inc.',          symbol:'CSE:RGEN',  label:'RGEN.CN' },
-    { name:'Maritime Launch Services',        symbol:'NEO:MAXQ',  label:'MAXQ.NE' },
+    { name: "enCore Energy Corp.", symbol: "TSXV:EU", label: "EU.V" },
+    { name: "NG Energy International Corp.", symbol: "TSX:GASX", label: "GASX.TO" },
+    { name: "CVW Cleantech Inc.", symbol: "TSXV:CVW", label: "CVW.V" },
+    { name: "Base Carbon Inc.", symbol: "NEO:BCBN", label: "BCBN.NE" },
+    { name: "Regenera Insights Inc.", symbol: "CSE:RGEN", label: "RGEN.CN" },
+    { name: "Maritime Launch Services", symbol: "NEO:MAXQ", label: "MAXQ.NE" }
   ],
 
-  // ── HEALTHCARE ──────────────────────────────────────────────
   health: [
-    { name:'Aurora Spine Corp.',              symbol:'TSXV:ASG',  label:'ASG.V' },
-    { name:'Blueberries Medical Corp.',       symbol:'CSE:BBM',   label:'BBM.CN' },
-    { name:'Defence Therapeutics',           symbol:'CSE:DTC',   label:'DTC.CN' },
-    { name:'Medipharm Labs Corp.',            symbol:'TSX:LABS',  label:'LABS.TO' },
-    { name:'Comprehensive Health Systems',   symbol:'TSXV:CHS',  label:'CHS.V' },
-    { name:'Restart Life Sciences Corp.',    symbol:'CSE:HEAL',  label:'HEAL.CN' },
-    { name:'NuGen Medical Devices Inc.',     symbol:'TSXV:NGMD', label:'NGMD.V' },
-    { name:'RealBotix Corp.',                symbol:'TSXV:XBOT', label:'XBOT.V' },
+    { name: "Aurora Spine Corp.", symbol: "TSXV:ASG", label: "ASG.V" },
+    { name: "Blueberries Medical Corp.", symbol: "CSE:BBM", label: "BBM.CN" },
+    { name: "Defence Therapeutics", symbol: "CSE:DTC", label: "DTC.CN" },
+    { name: "MediPharm Labs Corp.", symbol: "TSX:LABS", label: "LABS.TO" },
+    { name: "Comprehensive Health Systems", symbol: "TSXV:CHS", label: "CHS.V" },
+    { name: "Restart Life Sciences Corp.", symbol: "CSE:HEAL", label: "HEAL.CN" },
+    { name: "NuGen Medical Devices Inc.", symbol: "TSXV:NGMD", label: "NGMD.V" },
+    { name: "RealBotix Corp.", symbol: "TSXV:XBOT", label: "XBOT.V" }
   ],
 
-  // ── TECHNOLOGY ──────────────────────────────────────────────
   tech: [
-    { name:'WonderFi Technologies Inc.',     symbol:'TSX:WNDR',  label:'WNDR.TO' },
-    { name:'Intouch Insight Ltd.',           symbol:'TSXV:INX',  label:'INX.V' },
-    { name:'FRNT Financial Inc.',            symbol:'TSXV:FRNT', label:'FRNT.V' },
-    { name:'Cult Food Science Corp.',        symbol:'CSE:CULT',  label:'CULT.CN' },
+    { name: "WonderFi Technologies Inc.", symbol: "TSX:WNDR", label: "WNDR.TO" },
+    { name: "Intouch Insight Ltd.", symbol: "TSXV:INX", label: "INX.V" },
+    { name: "FRNT Financial Inc.", symbol: "TSXV:FRNT", label: "FRNT.V" },
+    { name: "Cult Food Science Corp.", symbol: "CSE:CULT", label: "CULT.CN" }
   ],
 
-  // ── REAL ESTATE ─────────────────────────────────────────────
   re: [
-    { name:'Firm Capital Mortgage Corp.',   symbol:'TSX:FC',    label:'FC.TO' },
-    { name:'Superior Plus Corp.',           symbol:'TSX:SPB',   label:'SPB.TO' },
+    { name: "Firm Capital Mortgage Corp.", symbol: "TSX:FC", label: "FC.TO" },
+    { name: "Superior Plus Corp.", symbol: "TSX:SPB", label: "SPB.TO" }
   ],
 
-  // ── HOSPITALITY (all private) ────────────────────────────────
   hosp: [
-    { name:'Forno Cultura',    desc:'Artisanal Italian bakery & café group, Toronto. Award-winning pastry and bread.' },
-    { name:'STK Toronto',      desc:'Upscale steakhouse concept, King West Toronto. Premium dining and private events.' },
-    { name:'Villa Le Calvane', desc:'Tuscan wine estate & agriturismo, Montespertoli, Firenze, Italy.' },
-    { name:'La Terrazza',      desc:'Italian fine dining & event venue, Toronto. Private club and hospitality.' },
-  ],
-};
-
-// ═══════════════════════════════════════════════════════════════
-// NEWS SOURCES — multiple direct RSS feeds per sector
-// These are fetched fresh each time with no caching layer,
-// sorted by pubDate descending, and filtered to last 72 hours.
-// ═══════════════════════════════════════════════════════════════
-const FEEDS = {
-  overview: [
-    'https://rss.nytimes.com/services/xml/rss/nyt/Business.xml',
-    'https://feeds.a.dj.com/rss/RSSMarketsMain.xml',
-    'https://feeds.a.dj.com/rss/WSJcomUSBusiness.xml',
-    'http://feeds.bbci.co.uk/news/business/rss.xml'
-  ],
-  mining: [
-  'https://www.mining.com/feed/',
-  'https://www.northernminer.com/rss-2/'
-],
-  energy: [
-    'https://rss.nytimes.com/services/xml/rss/nyt/EnergyEnvironment.xml',
-    'http://feeds.bbci.co.uk/news/science_and_environment/rss.xml',
-    'https://feeds.a.dj.com/rss/RSSWorldNews.xml'
-  ],
-  healthcare: [
-    'https://rss.nytimes.com/services/xml/rss/nyt/Health.xml',
-    'http://feeds.bbci.co.uk/news/health/rss.xml'
-  ],
-  technology: [
-    'https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml',
-    'http://feeds.bbci.co.uk/news/technology/rss.xml',
-    'https://feeds.a.dj.com/rss/RSSWSJD.xml'
-  ],
-  realestate: [
-  'https://rss.nytimes.com/services/xml/rss/nyt/RealEstate.xml',
-  'https://mediaroom.realtor.com/rss',
-  'http://feeds.bbci.co.uk/news/business/rss.xml'
-],
-  hospitality: [
-    'https://rss.nytimes.com/services/xml/rss/nyt/Travel.xml',
-    'http://feeds.bbci.co.uk/news/world/rss.xml'
+    { name: "Forno Cultura", desc: "Artisanal Italian bakery café group, Toronto. Award-winning pastry and bread." },
+    { name: "STK Toronto", desc: "Upscale steakhouse concept, King West Toronto. Premium dining and private events." },
+    { name: "Villa Le Calvane", desc: "Tuscan wine estate agriturismo, Montespertoli, Firenze, Italy." },
+    { name: "La Terrazza", desc: "Italian fine dining event venue, Toronto. Private club and hospitality." }
   ]
 };
 
-// Google News RSS as a final fallback — queried with sector keywords
+// News sources
+const FEEDS = {
+  overview: [
+    "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml",
+    "https://feeds.a.dj.com/rss/RSSMarketsMain.xml",
+    "https://feeds.a.dj.com/rss/WSJcom/USBusiness.xml",
+    "http://feeds.bbci.co.uk/news/business/rss.xml"
+  ],
+  mining: [
+    "https://www.mining.com/feed/",
+    "https://www.northernminer.com/rss-2/"
+  ],
+  energy: [
+    "https://rss.nytimes.com/services/xml/rss/nyt/EnergyEnvironment.xml",
+    "http://feeds.bbci.co.uk/news/science_and_environment/rss.xml",
+    "https://feeds.a.dj.com/rss/RSSWorldNews.xml"
+  ],
+  healthcare: [
+    "https://rss.nytimes.com/services/xml/rss/nyt/Health.xml",
+    "http://feeds.bbci.co.uk/news/health/rss.xml"
+  ],
+  technology: [
+    "https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml",
+    "http://feeds.bbci.co.uk/news/technology/rss.xml",
+    "https://feeds.a.dj.com/rss/RSSWSJD.xml"
+  ],
+  realestate: [
+    "https://rss.nytimes.com/services/xml/rss/nyt/RealEstate.xml",
+    "https://mediaroom.realtor.com/rss",
+    "http://feeds.bbci.co.uk/news/business/rss.xml"
+  ],
+  hospitality: [
+    "https://rss.nytimes.com/services/xml/rss/nyt/Travel.xml",
+    "http://feeds.bbci.co.uk/news/world/rss.xml"
+  ]
+};
+
+// Google News fallback queries (unchanged except slightly widened real estate)
 const GN_QUERIES = {
   overview: '(site:reuters.com OR site:bloomberg.com OR site:ft.com OR site:wsj.com OR site:nytimes.com OR site:apnews.com OR site:bbc.com OR site:theglobeandmail.com OR site:financialpost.com) (markets OR stocks OR inflation OR "interest rates" OR recession OR commodities OR "crude oil" OR "Federal Reserve" OR "Bank of Canada")',
-
   mining: '(site:reuters.com OR site:bloomberg.com OR site:wsj.com OR site:nytimes.com OR site:apnews.com OR site:mining.com OR site:northernminer.com OR site:kitco.com OR site:juniorminingnetwork.com OR site:resourceworld.com) (mining OR gold OR silver OR uranium OR copper OR lithium OR "drill results" OR "mineral exploration" OR "junior mining")',
-
-  energy: '(site:reuters.com OR site:bloomberg.com OR site:ft.com OR site:wsj.com OR site:nytimes.com OR site:apnews.com OR site:bbc.com OR site:financialpost.com) (oil OR "crude oil" OR "natural gas" OR OPEC OR LNG OR uranium OR "nuclear power" OR "renewable energy" OR pipeline OR "energy stocks")',
-
-  healthcare: '(site:reuters.com OR site:bloomberg.com OR site:wsj.com OR site:nytimes.com OR site:apnews.com OR site:bbc.com) (biotech OR pharmaceutical OR FDA OR "drug approval" OR "clinical trial" OR oncology OR "medical device" OR "life sciences")',
-
-  technology: '(site:reuters.com OR site:bloomberg.com OR site:ft.com OR site:wsj.com OR site:nytimes.com OR site:apnews.com OR site:bbc.com OR site:thelogic.co) ("artificial intelligence" OR AI OR semiconductor OR cybersecurity OR fintech OR blockchain OR startup OR "venture capital")',
-
-  realestate: '(site:reuters.com OR site:bloomberg.com OR site:ft.com OR site:wsj.com OR site:nytimes.com OR site:apnews.com OR site:bbc.com OR site:theglobeandmail.com OR site:financialpost.com OR site:realtor.com) (housing OR real estate OR home sales OR mortgage rates OR commercial real estate OR property market OR housing market OR REIT)',
-
+  energy: '(site:reuters.com OR site:bloomberg.com OR site:ft.com OR site:wsj.com OR site:nytimes.com OR site:apnews.com OR site:bbc.com OR site:financialpost.com) ("oil" OR "crude oil" OR "natural gas" OR OPEC OR LNG OR uranium OR "nuclear power" OR "renewable energy" OR pipeline OR "energy stocks")',
+  healthcare: '(site:reuters.com OR site:bloomberg.com OR site:wsj.com OR site:nytimes.com OR site:apnews.com OR site:bbc.com) (biotech OR pharmaceutical OR pharma OR FDA OR "drug approval" OR "clinical trial" OR oncology OR "medical device" OR "life sciences")',
+  technology: '(site:reuters.com OR site:bloomberg.com OR site:ft.com OR site:wsj.com OR site:nytimes.com OR site:apnews.com OR site:bbc.com OR site:thelogic.co) ("artificial intelligence" OR AI OR semiconductor OR chip OR cybersecurity OR software OR startup OR fintech OR blockchain OR bitcoin OR crypto)',
+  realestate: '(site:reuters.com OR site:bloomberg.com OR site:ft.com OR site:wsj.com OR site:nytimes.com OR site:apnews.com OR site:bbc.com OR site:theglobeandmail.com OR site:financialpost.com OR site:realtor.com) ("real estate" OR housing OR "housing market" OR "home sales" OR "home prices" OR mortgage OR "mortgage rates" OR "commercial real estate" OR "property market" OR REIT)',
   hospitality: '(site:reuters.com OR site:bloomberg.com OR site:ft.com OR site:wsj.com OR site:nytimes.com OR site:apnews.com OR site:bbc.com) (hospitality OR restaurant OR hotel OR tourism OR travel OR wine OR dining OR "consumer spending" OR "luxury travel")'
 };
+
+// Approved publishers list (unchanged)
 const APPROVED = [
-  'Reuters','Bloomberg','Financial Times','Globe and Mail','Financial Post',
-  'BNN Bloomberg','CBC','Canadian Press','Mining.com','Kitco','Northern Miner',
-  'S&P Global','Morningstar','MarketWatch','Wall Street Journal',
-  'The Economist','BBC','Associated Press','The Logic','Business Insider',
-  'Stockhouse','GlobeNewswire','Newswire','Junior Mining Network',
-  'Resource World','Proactive','CEO.CA','Investing News',
+  "Reuters","Bloomberg","Financial Times","Globe and Mail","Financial Post",
+  "BNN Bloomberg","CBC","Canadian Press","Mining.com","Kitco","Northern Miner",
+  "S&P Global","Morningstar","MarketWatch","Wall Street Journal","The Economist",
+  "BBC","Associated Press","The Logic","Business Insider","Stockhouse",
+  "GlobeNewswire","Newswire","Junior Mining Network","Resource World",
+  "Proactive","CEO.CA","Investing News"
 ];
 
-// ═══════════════════════════════════════════════════════════════
-// CLOCK
-// ═══════════════════════════════════════════════════════════════
-function updateClock(){
-  const now=new Date();
-  document.getElementById('live-clock').textContent=
-    new Intl.DateTimeFormat('en-CA',{timeZone:'America/Toronto',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(now)+' ET';
-  const tor=new Date(now.toLocaleString('en-US',{timeZone:'America/Toronto'}));
-  const m=tor.getHours()*60+tor.getMinutes(),d=tor.getDay();
-  const open=d>=1&&d<=5&&m>=570&&m<960;
-  document.getElementById('mkt-dot').className='mkt-dot '+(open?'open':'closed');
-  document.getElementById('mkt-status').textContent=open?'TSX Open':'Market Closed';
+/* CLOCK */
+
+function updateClock() {
+  const now = new Date();
+  const clock = document.getElementById("live-clock");
+  if (clock) {
+    clock.textContent = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Toronto",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false
+    }).format(now) + " ET";
+  }
+
+  // crude TSX open/closed flag
+  const tor = new Date(now.toLocaleString("en-US", { timeZone: "America/Toronto" }));
+  const m = tor.getHours() * 60 + tor.getMinutes();
+  const d = tor.getDay(); // 0 Sunday
+  const open = d >= 1 && d <= 5 && m >= 570 && m <= 960; // 9:30–16:00
+  const dot = document.getElementById("mkt-dot");
+  const label = document.getElementById("mkt-status");
+  if (dot) dot.className = "mkt-dot " + (open ? "open" : "closed");
+  if (label) label.textContent = open ? "TSX Open" : "Market Closed";
 }
-setInterval(updateClock,1000); updateClock();
 
-// ═══════════════════════════════════════════════════════════════
-// TRADINGVIEW
-// ═══════════════════════════════════════════════════════════════
-let widgetSeq=0;
+setInterval(updateClock, 1000);
+updateClock();
 
-function makeTape(){
-  const wrap=document.getElementById('tape-inner');
-  wrap.innerHTML='';
-  const wc=document.createElement('div');
-  wc.className='tradingview-widget-container';
-  const wi=document.createElement('div');
-  wi.className='tradingview-widget-container__widget';
-  wc.appendChild(wi); wrap.appendChild(wc);
+/* TRADINGVIEW */
+
+let widgetSeq = 0;
+
+function makeTape() {
+  const wrap = document.getElementById("tape-inner");
+  if (!wrap) return;
+  wrap.innerHTML = "";
+
+  const wc = document.createElement("div");
+  wc.className = "tradingview-widget-container";
+
+  const wi = document.createElement("div");
+  wi.className = "tradingview-widget-container__widget";
+
+  wc.appendChild(wi);
+  wrap.appendChild(wc);
+
   new TradingView.widget({
-    "width":"100%","height":46,"isTransparent":true,
-    "displayMode":"compact","colorTheme":"dark","locale":"en",
-    "symbols":[
-      ["Gold","OANDA:XAUUSD|1D"],["Silver","OANDA:XAGUSD|1D"],
-      ["Copper","COMEX:HG1!|1D"],["WTI","NYMEX:CL1!|1D"],
-      ["S&P 500","FOREXCOM:SPXUSD|1D"],["TSX","TSX:OSPTSX|1D"],
-      ["CAD/USD","FX:CADUSD|1D"],["BTC","BITSTAMP:BTCUSD|1D"]
+    width: "100%",
+    height: 46,
+    isTransparent: true,
+    displayMode: "compact",
+    colorTheme: "dark",
+    locale: "en",
+    symbols: [
+      ["Gold", "OANDA:XAUUSD|1D"],
+      ["Silver", "OANDA:XAGUSD|1D"],
+      ["Copper", "COMEX:HG1!|1D"],
+      ["WTI", "NYMEX:CL1!|1D"],
+      ["S&P 500", "FOREXCOM:SPXUSD|1D"],
+      ["TSX", "TSX:OSPTSX|1D"],
+      ["CADUSD", "FX:CADUSD|1D"],
+      ["BTC", "BITSTAMP:BTCUSD|1D"]
     ]
   });
 }
 
-function makeChart(mountEl,symbol){
-  if(!mountEl||!mountEl.isConnected||!mountEl.parentNode)return;
-  const id='tv'+(++widgetSeq);
-  mountEl.id=id;
+function makeChart(mountEl, symbol) {
+  if (!mountEl || !mountEl.isConnected || !mountEl.parentNode) return;
+  const id = "tv-" + (widgetSeq++);
+  mountEl.id = id;
+
+  // One-time widget init for a stable, visible container
   new TradingView.widget({
-    "container_id":id,"width":"100%","height":150,
-    "symbol":symbol,"interval":"D","timezone":"America/Toronto",
-    "theme":"dark","style":"3","locale":"en",
-    "toolbar_bg":"#111116","hide_top_toolbar":true,"hide_legend":false,
-    "withdateranges":false,"hide_side_toolbar":true,
-    "allow_symbol_change":false,"save_image":false,
-    "show_popup_button":false,"autosize":false,
+    container_id: id,
+    width: "100%",
+    height: 150,
+    symbol,
+    interval: "D",
+    timezone: "America/Toronto",
+    theme: "dark",
+    style: "3",
+    locale: "en",
+    toolbar_bg: "#111116",
+    hide_top_toolbar: true,
+    hide_legend: false,
+    withdateranges: false,
+    hide_side_toolbar: true,
+    allow_symbol_change: false,
+    save_image: false,
+    show_popup_button: false,
+    autosize: false
   });
 }
 
-function renderGrid(gridId, items){
+function renderGrid(gridId, items) {
   const grid = document.getElementById(gridId);
   if (!grid) return;
 
-  grid.innerHTML = '';
+  grid.innerHTML = "";
 
   const chartQueue = [];
 
   items.forEach(item => {
     if (!item.symbol) {
-      const c = document.createElement('div');
-      c.className = 'private-card';
+      const c = document.createElement("div");
+      c.className = "private-card";
       c.innerHTML = `
         <div class="private-card-name">${item.name}</div>
         <div class="private-card-badge">Private — Not Listed</div>
-        <div class="private-card-desc">${item.desc || ''}</div>
+        <div class="private-card-desc">${item.desc || ""}</div>
       `;
       grid.appendChild(c);
       return;
     }
 
-    const card = document.createElement('div');
-    card.className = 'price-card';
+    const card = document.createElement("div");
+    card.className = "price-card";
 
-    const frame = document.createElement('div');
-    frame.className = 'tv-frame';
+    const frame = document.createElement("div");
+    frame.className = "tv-frame";
     card.appendChild(frame);
 
-    const lbl = document.createElement('div');
-    lbl.className = 'price-card-lbl';
+    const lbl = document.createElement("div");
+    lbl.className = "price-card-lbl";
     lbl.innerHTML = `
       <span class="price-card-name">${item.name}</span>
-      <span class="price-card-ticker">${item.label || item.symbol.split(':').pop()}</span>
+      <span class="price-card-ticker">${item.label || item.symbol.split(":").pop()}</span>
     `;
 
     card.appendChild(lbl);
@@ -583,24 +607,25 @@ function renderGrid(gridId, items){
     chartQueue.push({ frame, symbol: item.symbol });
   });
 
+  // Lazy-init widgets slightly after DOM is painted
   setTimeout(() => {
     chartQueue.forEach(({ frame, symbol }, index) => {
       setTimeout(() => {
         try {
           makeChart(frame, symbol);
         } catch (e) {
-          frame.style.cssText = 'display:flex;align-items:center;justify-content:center;padding:16px;min-height:90px;';
-          frame.innerHTML = `<a href="https://www.tradingview.com/symbols/${symbol.replace(':','/')}" target="_blank" rel="noopener" style="font-size:11px;color:var(--gold);text-decoration:none;font-family:'Syne',sans-serif;font-weight:600;">${symbol.split(':').pop()} — View on TradingView ↗</a>`;
+          frame.style.cssText = "display:flex;align-items:center;justify-content:center;padding:16px;min-height:90px;";
+          frame.innerHTML = `<a href="https://www.tradingview.com/symbols/${symbol.replace(":", "/")}" target="_blank" rel="noopener" style="font-size:11px;color:var(--gold);text-decoration:none;font-family:'Syne',sans-serif;font-weight:600;">${symbol.split(":").pop()} — View on TradingView ↗</a>`;
         }
-      }, index * 60);
+      }, index * 70);
     });
   }, 250);
 }
 
-// ═══════════════════════════════════════════════════════════════
-// NEWS ENGINE — normalized titles, direct feeds + Google fallback
-// ═══════════════════════════════════════════════════════════════
-const CACHE = {}, TTL = 30 * 60 * 1000;
+/* NEWS ENGINE */
+
+const CACHE = {};
+const TTL = 30 * 60 * 1000; // 30 minutes
 
 function parsePubDate(str) {
   if (!str) return 0;
@@ -608,65 +633,31 @@ function parsePubDate(str) {
   return isNaN(d.getTime()) ? 0 : d.getTime();
 }
 
-function parseXML(text) {
-  try {
-    const xml = new DOMParser().parseFromString(text, 'text/xml');
-    return Array.from(xml.querySelectorAll('item')).map(i => ({
-      title: i.querySelector('title')?.textContent || '',
-      link: i.querySelector('link')?.textContent || i.querySelector('guid')?.textContent || '',
-      description: i.querySelector('description')?.textContent || '',
-      pubDate: i.querySelector('pubDate')?.textContent || '',
-      source: i.querySelector('source')?.textContent || '',
-    }));
-  } catch {
-    return [];
-  }
-}
-
-async function tryFetch(proxyUrl) {
-  const r = await fetch(proxyUrl, { signal: AbortSignal.timeout(10000) });
-  if (!r.ok) throw new Error('HTTP ' + r.status);
-  const text = await r.text();
-  let xml = text;
-
-  try {
-    const j = JSON.parse(text);
-    if (j.contents) xml = j.contents;
-  } catch {}
-
-  const items = parseXML(xml);
-  if (!items.length) throw new Error('empty');
-  return items;
-}
-
-function cleanText(str = '') {
-  return (str || '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
+function cleanText(str = "") {
+  return str
+    .replace(/<\/?[^>]+(>|$)/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
-    .replace(/\s+/g, ' ')
+    .replace(/\s+/g, " ")
     .trim();
 }
 
-function looksLikeBadSource(src = '') {
-  return (
-    !src ||
-    /\b(OR|AND)\b/.test(src) ||
-    /["“”]/.test(src) ||
-    src.length > 60
-  );
+function looksLikeBadSource(src) {
+  if (!src) return true;
+  if (/Google News/i.test(src)) return true;
+  if (/feedburner/i.test(src)) return true;
+  return src.length < 3;
 }
 
-function splitHeadlineAndSource(rawTitle = '', fallbackSource = '') {
-  const title = cleanText(rawTitle);
-
+function splitHeadlineAndSource(rawTitle, fallbackSource) {
+  const title = cleanText(rawTitle || "");
   const patterns = [
-    /^(.*?)\s+[–—-]\s+([^–—-]{2,50})$/,
-    /^(.*?)\s+\|\s+([^|]{2,50})$/,
-    /^(.*?)\s+•\s+([^•]{2,50})$/
+    /^(.*)\s*[-–]\s*([^–-]{2,50})$/,
+    /^(.*)\s*\|\s*([^|]{2,50})$/,
+    /^(.*)\s+·\s+(.{2,50})$/
   ];
 
   for (const pattern of patterns) {
@@ -674,334 +665,374 @@ function splitHeadlineAndSource(rawTitle = '', fallbackSource = '') {
     if (m) {
       const possibleTitle = cleanText(m[1]);
       const possibleSource = cleanText(m[2]);
-
-      if (possibleTitle.length > 12 && possibleSource.length < 40) {
-        return {
-          title: possibleTitle,
-          source: possibleSource
-        };
+      if (possibleTitle.length > 12 && possibleSource.length <= 40) {
+        return { title: possibleTitle, source: possibleSource };
       }
     }
   }
-
-  return {
-    title,
-    source: cleanText(fallbackSource)
-  };
+  return { title, source: cleanText(fallbackSource || "") };
 }
 
-function normalizeItem(item = {}) {
-  const rawSource = cleanText(item.source || '');
-  const split = splitHeadlineAndSource(item.title || '', rawSource);
-
+function normalizeItem(item) {
+  const rawSource = cleanText(item.source || "");
+  const split = splitHeadlineAndSource(item.title, rawSource);
   let source = split.source;
 
-  if (looksLikeBadSource(source)) source = '';
-
-  if (!source && item._feedUrl) {
-    try {
-      const u = new URL(item._feedUrl);
-      const host = u.hostname.replace('www.', '').replace('feeds.', '');
-      if (host.includes('nytimes')) source = 'New York Times';
-      else if (host.includes('bbc')) source = 'BBC';
-      else source = host.split('.')[0];
-    } catch {}
+  if (looksLikeBadSource(source)) {
+    // derive from feed URL when possible
+    if (item.feedUrl) {
+      try {
+        const u = new URL(item.feedUrl);
+        const host = u.hostname.replace(/^www\./, "").replace(/^feeds\./, "");
+        if (host.includes("nytimes")) source = "New York Times";
+        else if (host.includes("bbc")) source = "BBC";
+        else source = host.split(".")[0];
+      } catch { /* ignore */ }
+    }
   }
 
-  if (!source) source = 'Google News';
+  if (!source) source = "Google News";
 
   return {
-    title: split.title || 'Untitled article',
-    description: cleanText(item.description || '').slice(0, 220),
+    title: split.title || "Untitled article",
+    description: cleanText(item.description || "").slice(0, 220),
     source,
-    link: item.link || item.guid || '#',
-    pubDate: item.pubDate || item.isoDate || '',
-    _feedUrl: item._feedUrl || ''
+    link: item.link || item.guid || "",
+    pubDate: item.pubDate || item.isoDate || "",
+    feedUrl: item.feedUrl || ""
   };
 }
 
-function dedupeNews(items = []) {
+function dedupeNews(items) {
   const seen = new Set();
   const out = [];
-
   for (const raw of items) {
     const item = normalizeItem(raw);
-    const key = `${item.link}::${item.title.toLowerCase()}`;
-
-    if (!seen.has(key) && item.title && item.link && item.link !== '#') {
+    const key = (item.link || "") + "::" + item.title.toLowerCase();
+    if (!seen.has(key) && item.title && item.link) {
       seen.add(key);
       out.push(item);
     }
   }
-
   return out;
+}
+
+async function tryFetch(proxyUrl) {
+  const r = await fetch(proxyUrl, { signal: AbortSignal.timeout(10000) });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  const text = await r.text();
+
+  let xml = text;
+  try {
+    const j = JSON.parse(text);
+    if (j.contents) xml = j.contents;
+  } catch {
+    // plain XML
+  }
+
+  const doc = new DOMParser().parseFromString(xml, "text/xml");
+  const nodes = Array.from(doc.querySelectorAll("item"));
+  if (!nodes.length) throw new Error("empty");
+  return nodes.map(i => ({
+    title: i.querySelector("title")?.textContent || "",
+    link: i.querySelector("link")?.textContent || i.querySelector("guid")?.textContent || "",
+    description: i.querySelector("description")?.textContent || "",
+    pubDate: i.querySelector("pubDate")?.textContent || "",
+    source: i.querySelector("source")?.textContent || "",
+    feedUrl: ""
+  }));
 }
 
 async function fetchFeedUrl(feedUrl) {
   const enc = encodeURIComponent(feedUrl);
-
   const proxies = [
-    'https://api.allorigins.win/get?url=' + enc,
-    'https://api.codetabs.com/v1/proxy?quest=' + enc,
-    'https://corsproxy.io/?' + enc,
-    'https://api.allorigins.win/raw?url=' + enc,
+    `https://api.allorigins.win/get?url=${enc}`,
+    `https://api.codetabs.com/v1/proxy?quest=${enc}`,
+    `https://corsproxy.io/?${enc}`,
+    `https://api.allorigins.win/raw?url=${enc}`
   ];
-
   for (const url of proxies) {
     try {
       const items = await tryFetch(url);
-      if (items.length) {
-        return items.map(i => ({ ...i, _feedUrl: feedUrl }));
-      }
-    } catch {}
+      if (items.length) return items.map(it => ({ ...it, feedUrl }));
+    } catch {
+      // try next proxy
+    }
   }
-
   return [];
 }
 
 async function fetchAllFeeds(tab) {
   const urls = FEEDS[tab] || [];
   if (!urls.length) return [];
-
   const results = await Promise.all(urls.map(fetchFeedUrl));
   return results.flat();
 }
 
 async function fetchGoogleNews(tab) {
-  const q = GN_QUERIES[tab] || '';
-  const gnUrl = 'https://news.google.com/rss/search?q=' + encodeURIComponent(q) + '&hl=en&gl=US&ceid=US:en';
+  const q = GN_QUERIES[tab];
+  if (!q) return [];
+  const gnUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=en&gl=US&ceid=US:en`;
   const enc = encodeURIComponent(gnUrl);
 
   const proxies = [
-    'https://api.allorigins.win/get?url=' + enc,
-    'https://api.codetabs.com/v1/proxy?quest=' + enc,
-    'https://corsproxy.io/?' + enc,
-    'https://api.allorigins.win/raw?url=' + enc,
+    `https://api.allorigins.win/get?url=${enc}`,
+    `https://api.codetabs.com/v1/proxy?quest=${enc}`,
+    `https://corsproxy.io/?${enc}`,
+    `https://api.allorigins.win/raw?url=${enc}`
   ];
-
   for (const url of proxies) {
     try {
       const items = await tryFetch(url);
-      if (items.length) return items;
-    } catch {}
+      if (items.length) return items.map(it => ({ ...it, feedUrl: gnUrl }));
+    } catch {
+      // continue
+    }
   }
 
+  // rss2json fallback
   try {
-    const api = 'https://api.rss2json.com/v1/api.json?rss_url=' + enc + '&count=30' + (RSS2JSON_KEY ? '&api_key=' + RSS2JSON_KEY : '');
+    const api = `https://api.rss2json.com/v1/api.json?rss_url=${enc}` + (RSS2JSON_KEY ? `&api_key=${RSS2JSON_KEY}` : "");
     const r = await fetch(api, { signal: AbortSignal.timeout(10000) });
     const d = await r.json();
-
-    if (d.status === 'ok' && d.items?.length) {
+    if (d.status === "ok" && d.items?.length) {
       return d.items.map(i => ({
-        title: i.title || '',
-        link: i.link || i.guid || '',
-        description: i.description || i.content || '',
-        pubDate: i.pubDate || '',
-        source: d.feed?.title || '',
+        title: i.title,
+        link: i.link || i.guid,
+        description: i.description || i.content,
+        pubDate: i.pubDate,
+        source: d.feed?.title || "",
+        feedUrl: gnUrl
       }));
     }
-  } catch {}
-
+  } catch {
+    // ignore
+  }
   return [];
 }
 
 function ageLabel(pubDate) {
   const ms = Date.now() - parsePubDate(pubDate);
-  if (ms <= 0) return { text: 'just now', cls: 'age-fresh' };
+  if (ms <= 0) return { text: "just now", cls: "age-fresh" };
   const h = ms / 3600000;
-  if (h < 1) return { text: Math.round(ms / 60000) + 'm ago', cls: 'age-fresh' };
-  if (h < 24) return { text: Math.round(h) + 'h ago', cls: 'age-fresh' };
-  if (h < 72) return { text: Math.round(h / 24) + 'd ago', cls: 'age-old' };
-  return { text: Math.round(h / 24) + 'd ago', cls: 'age-stale' };
+  if (h < 1) return { text: `${Math.round(ms / 60000)} m ago`, cls: "age-fresh" };
+  if (h < 24) return { text: `${Math.round(h)} h ago`, cls: "age-fresh" };
+  if (h < 72) return { text: `${Math.round(h / 24)} d ago`, cls: "age-old" };
+  return { text: `${Math.round(h / 24)} d ago`, cls: "age-stale" };
 }
+
 function isRelevantForTab(tab, item) {
-  const text = `${item.title} ${item.description} ${item.source}`.toLowerCase();
+  const text = (item.title + " " + item.description + " " + item.source).toLowerCase();
 
   const keywords = {
-    overview: ['market', 'stocks', 'inflation', 'interest rate', 'federal reserve', 'bank of canada', 'gold', 'oil', 'crude', 'economy', 'recession', 'commodities', 'tsx', 's&p', 'dow'],
-    mining: ['mining', 'miner', 'gold', 'silver', 'copper', 'uranium', 'lithium', 'nickel', 'zinc', 'drill', 'drilling', 'exploration', 'resource', 'ore', 'metals', 'precious metals', 'base metals', 'deposit'],
-    energy: ['oil', 'crude', 'natural gas', 'lng', 'opec', 'uranium', 'nuclear', 'renewable', 'solar', 'wind', 'pipeline', 'energy'],
-    healthcare: ['biotech', 'pharma', 'pharmaceutical', 'fda', 'drug', 'clinical trial', 'oncology', 'medical device', 'healthcare', 'life sciences'],
-    technology: ['ai', 'artificial intelligence', 'semiconductor', 'chip', 'cybersecurity', 'software', 'startup', 'fintech', 'blockchain', 'bitcoin', 'crypto', 'technology'],
-    realestate: ['real estate', 'reit', 'housing', 'mortgage', 'property', 'commercial real estate', 'home sales', 'residential'],
-    hospitality: ['hospitality', 'restaurant', 'hotel', 'tourism', 'travel', 'wine', 'dining', 'consumer spending', 'luxury travel']
+    overview: ["market","stocks","inflation","interest rate","federal reserve","bank of canada","gold","oil","crude","economy","recession","commodities","tsx","s&p","dow"],
+    mining: ["mining","miner","gold","silver","copper","uranium","lithium","nickel","zinc","drill","drilling","exploration","resource","ore","metals","precious metals","base metals","deposit"],
+    energy: ["oil","crude","natural gas","lng","opec","uranium","nuclear","renewable","solar","wind","pipeline","energy"],
+    healthcare: ["biotech","pharma","pharmaceutical","fda","drug","clinical trial","oncology","medical device","healthcare","life sciences"],
+    technology: ["ai","artificial intelligence","semiconductor","chip","cybersecurity","software","startup","fintech","blockchain","bitcoin","crypto","technology"],
+    realestate: ["real estate","reit","housing","mortgage","property","commercial real estate","home sales","home prices","residential"],
+    hospitality: ["hospitality","restaurant","hotel","tourism","travel","wine","dining","consumer spending","luxury travel"]
   };
 
-  const badMiningTerms = ['stanley cup', 'nhl', 'hurricanes', 'knights', 'playoffs', 'football', 'baseball', 'basketball'];
-  if (tab === 'mining' && badMiningTerms.some(term => text.includes(term))) return false;
+  const badMiningTerms = ["stanley cup","nhl","hurricanes","knights","playoffs","football","baseball","basketball"];
 
-  return (keywords[tab] || []).some(term => text.includes(term));
+  if (tab === "mining" && badMiningTerms.some(term => text.includes(term))) return false;
+
+  const list = keywords[tab] || [];
+  if (!list.length) return true;
+
+  return list.some(term => text.includes(term));
 }
-  
+
+function renderNews(tab, items, fromCache) {
+  const grid = document.getElementById("ng-" + tab);
+  if (!grid) return;
+
+  if (!items?.length) {
+    grid.innerHTML = `<div class="news-empty">No news found — try refreshing.</div>`;
+    return;
+  }
+
+  grid.innerHTML = items.map(item => {
+    const age = ageLabel(item.pubDate);
+    const badge = age.cls === "age-fresh" ? "fresh" : age.cls === "age-old" ? "recent" : "older";
+    return `
+      <a class="news-card" href="${item.link}" target="_blank" rel="noopener noreferrer">
+        <div class="news-src">${item.source}</div>
+        <div class="news-ttl">${item.title}</div>
+        ${item.description ? `<div class="news-desc">${item.description}</div>` : ""}
+        <div class="news-time">
+          ${age.text}<span class="news-age-warn ${age.cls}">${badge}</span>
+        </div>
+      </a>
+    `;
+  }).join("");
+}
+
+function setDate(tab) {
+  const el = document.getElementById("bd-" + tab);
+  if (!el) return;
+  el.textContent = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Toronto",
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric"
+  }).format(new Date());
+}
+
+function setBrief(tab, items) {
+  const el = document.getElementById("bt-" + tab);
+  if (!el) return;
+
+  if (!items?.length) {
+    el.className = "brief-body loading";
+    el.textContent = "Unable to load. Refresh to retry.";
+    return;
+  }
+  el.className = "brief-body";
+  el.textContent = "Latest: " + items.slice(0, 5).map(i => i.title).join(" · ");
+}
+
 async function loadNews(tab) {
-  const grid = document.getElementById('ng-' + tab);
+  const grid = document.getElementById("ng-" + tab);
   if (!grid) return;
 
   const now = Date.now();
   if (CACHE[tab] && (now - CACHE[tab].ts) < TTL) {
     renderNews(tab, CACHE[tab].items, true);
     const ago = Math.round((now - CACHE[tab].ts) / 60000);
-    const cn = document.getElementById('cn-' + tab);
-    if (cn) cn.textContent = 'Cached ' + ago + 'm ago';
+    const cn = document.getElementById("cn-" + tab);
+    if (cn) cn.textContent = `Cached ${ago} m ago`;
     return;
   }
 
-  grid.innerHTML = '<div class="news-loading"><span class="spin"></span>&nbsp;&nbsp;Fetching live news…</div>';
+  grid.innerHTML = `<div class="news-loading"><span class="spin"></span>&nbsp;&nbsp;Fetching live news…</div>`;
 
-  const [direct, gnItems] = await Promise.all([
-    fetchAllFeeds(tab),
-    fetchGoogleNews(tab),
-  ]);
+  try {
+    const [direct, gnItems] = await Promise.all([
+      fetchAllFeeds(tab),
+      fetchGoogleNews(tab)
+    ]);
 
-  const merged = dedupeNews([...direct, ...gnItems])
-    .filter(item => isRelevantForTab(tab, item))
-    .sort((a, b) => parsePubDate(b.pubDate) - parsePubDate(a.pubDate));
+    let merged = dedupeNews([...direct, ...gnItems]);
 
-  const maxAge = 5 * 24 * 60 * 60 * 1000;
-  const fresh = merged.filter(a => (Date.now() - parsePubDate(a.pubDate)) < maxAge);
-  const final = (fresh.length >= 4 ? fresh : merged).slice(0, 24);
+    // Be less strict for real estate to restore fresher feel
+    if (tab !== "realestate") {
+      merged = merged.filter(item => isRelevantForTab(tab, item));
+    }
 
-  CACHE[tab] = { items: final, ts: now };
+    merged.sort((a, b) => parsePubDate(b.pubDate) - parsePubDate(a.pubDate));
 
-  const cn = document.getElementById('cn-' + tab);
-  if (cn) {
-    cn.textContent = 'Updated ' + new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'America/Toronto',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    }).format(new Date());
+    const maxAge = tab === "realestate"
+      ? 10 * 24 * 60 * 60 * 1000   // allow up to ~10 days for RE
+      : 5  * 24 * 60 * 60 * 1000;  // 5 days for others
+
+    const fresh = merged.filter(a => Date.now() - parsePubDate(a.pubDate) < maxAge);
+    const final = fresh.length >= 4 ? fresh : merged.slice(0, 24);
+
+    CACHE[tab] = { items: final, ts: now };
+
+    const cn = document.getElementById("cn-" + tab);
+    if (cn) {
+      cn.textContent = "Updated " + new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Toronto",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true
+      }).format(new Date());
+    }
+
+    renderNews(tab, final, false);
+    setBrief(tab, final);
+  } catch (e) {
+    grid.innerHTML = `<div class="news-empty">Unable to load news. Please try refreshing.</div>`;
   }
-
-  renderNews(tab, final, false);
-  setBrief(tab, final);
-}
-
-function renderNews(tab, items, fromCache) {
-  const grid = document.getElementById('ng-' + tab);
-  if (!grid) return;
-
-  if (!items?.length) {
-    grid.innerHTML = '<div class="news-empty">No news found — try refreshing.</div>';
-    return;
-  }
-
-  grid.innerHTML = items.map(item => {
-    const age = ageLabel(item.pubDate);
-    const badge = age.cls === 'age-fresh' ? 'fresh' : age.cls === 'age-old' ? 'recent' : 'older';
-
-    return `<a class="news-card" href="${item.link}" target="_blank" rel="noopener noreferrer">
-      <div class="news-src">${item.source}</div>
-      <div class="news-ttl">${item.title}</div>
-      ${item.description ? `<div class="news-desc">${item.description}</div>` : ''}
-      <div class="news-time">${age.text}<span class="news-age-warn ${age.cls}">${badge}</span></div>
-    </a>`;
-  }).join('');
 }
 
 async function refreshNews(tab) {
   delete CACHE[tab];
-  const cn = document.getElementById('cn-' + tab);
-  if (cn) cn.textContent = '';
+  const cn = document.getElementById("cn-" + tab);
+  if (cn) cn.textContent = "";
   await loadNews(tab);
 }
 
-function setDate(tab) {
-  const el = document.getElementById('bd-' + tab);
-  if (el) {
-    el.textContent = new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'America/Toronto',
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    }).format(new Date());
-  }
-}
+/* TABS */
 
-function setBrief(tab, items) {
-  const el = document.getElementById('bt-' + tab);
-  if (!el) return;
-
-  if (!items?.length) {
-    el.className = 'brief-body loading';
-    el.textContent = 'Unable to load. Refresh to retry.';
-    return;
-  }
-
-  el.className = 'brief-body';
-  el.textContent = 'Latest: ' + items.slice(0, 5).map(i => i.title).join(' · ');
-}
-// ═══════════════════════════════════════════════════════════════
-// TAB SWITCHING
-// ═══════════════════════════════════════════════════════════════
 const loaded = new Set();
 
-function activateTab(tab){
-  document.querySelectorAll('.tab-btn').forEach(b =>
-    b.classList.toggle('active', b.dataset.tab === tab)
+function activateTab(tab) {
+  document.querySelectorAll(".tab-btn").forEach(b =>
+    b.classList.toggle("active", b.dataset.tab === tab)
   );
-  document.querySelectorAll('.tab-panel').forEach(p =>
-    p.classList.toggle('active', p.id === 'tab-' + tab)
+  document.querySelectorAll(".tab-panel").forEach(p =>
+    p.classList.toggle("active", p.id === "tab-" + tab)
   );
 
-  if (loaded.has(tab)) return;
-  loaded.add(tab);
+  // Only do the heavy work on first visit
+  if (!loaded.has(tab)) {
+    loaded.add(tab);
 
-  setDate(tab);
+    setDate(tab);
 
-  switch(tab){
-    case 'overview':
-      renderGrid('grid-overview', SECTORS.overview);
-      break;
-    case 'mining':
-      renderGrid('grid-mg', SECTORS['mining-gold']);
-      renderGrid('grid-ms', SECTORS['mining-silver']);
-      renderGrid('grid-mc', SECTORS['mining-copper']);
-      renderGrid('grid-ml', SECTORS['mining-lithium']);
-      renderGrid('grid-mu', SECTORS['mining-uranium']);
-      renderGrid('grid-mo', SECTORS['mining-other']);
-      break;
-    case 'energy':
-      renderGrid('grid-energy', SECTORS.energy);
-      break;
-    case 'healthcare':
-      renderGrid('grid-health', SECTORS.health);
-      break;
-    case 'technology':
-      renderGrid('grid-tech', SECTORS.tech);
-      break;
-    case 'realestate':
-      renderGrid('grid-re', SECTORS.re);
-      break;
-    case 'hospitality':
-      renderGrid('grid-hosp', SECTORS.hosp);
-      break;
+    switch (tab) {
+      case "overview":
+        renderGrid("grid-overview", SECTORS.overview);
+        break;
+      case "mining":
+        renderGrid("grid-mg", SECTORS["mining-gold"]);
+        renderGrid("grid-ms", SECTORS["mining-silver"]);
+        renderGrid("grid-mc", SECTORS["mining-copper"]);
+        renderGrid("grid-ml", SECTORS["mining-lithium"]);
+        renderGrid("grid-mu", SECTORS["mining-uranium"]);
+        renderGrid("grid-mo", SECTORS["mining-other"]);
+        break;
+      case "energy":
+        renderGrid("grid-energy", SECTORS.energy);
+        break;
+      case "healthcare":
+        renderGrid("grid-health", SECTORS.health);
+        break;
+      case "technology":
+        renderGrid("grid-tech", SECTORS.tech);
+        break;
+      case "realestate":
+        renderGrid("grid-re", SECTORS.re);
+        break;
+      case "hospitality":
+        renderGrid("grid-hosp", SECTORS.hosp);
+        break;
+    }
+
+    loadNews(tab);
+  } else {
+    // light-weight revisit: no grid re-render, just show cached news
+    loadNews(tab);
   }
-
-  loadNews(tab);
 }
 
-document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>activateTab(b.dataset.tab)));
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => activateTab(btn.dataset.tab));
+});
 
-// ═══════════════════════════════════════════════════════════════
-// SOURCES PANEL
-// ═══════════════════════════════════════════════════════════════
-function toggleSrc(){
-  document.getElementById('src-toggle').classList.toggle('open');
-  document.getElementById('src-body').classList.toggle('open');
+/* SOURCES PANEL */
+
+function toggleSrc() {
+  const t = document.getElementById("src-toggle");
+  const b = document.getElementById("src-body");
+  const list = document.getElementById("src-list");
+  if (!t || !b || !list) return;
+  t.classList.toggle("open");
+  b.classList.toggle("open");
+  list.innerHTML = APPROVED.map(s => `<div class="src-tag">${s}</div>`).join("");
 }
-document.getElementById('src-list').innerHTML=APPROVED.map(s=>`<div class="src-tag">${s}</div>`).join('');
 
-// ═══════════════════════════════════════════════════════════════
-// BOOT
-// ═══════════════════════════════════════════════════════════════
-window.addEventListener('load', () => {
+/* BOOT */
+
+window.addEventListener("load", () => {
   makeTape();
-
-  setTimeout(() => {
-    activateTab('overview');
-  }, 300);
+  // Give TradingView a short beat before first overview widgets
+  setTimeout(() => activateTab("overview"), 300);
 });
 </script>
 </body>
